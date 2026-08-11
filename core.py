@@ -1,34 +1,45 @@
-class GameManager:
-    def __init__(self):
-        self.players = []
+from typing import List, Dict, Any
 
-    def add_player(self, player_name):
-        self.players.append(player_name)
+class Game:
+    """
+    Represents a game instance with attributes like title, genre, and player count.
+    """
+    def __init__(self, title: str, genre: str, player_count: int) -> None:
+        self.title = title
+        self.genre = genre
+        self.player_count = player_count
 
-    def remove_player(self, player_name):
-        self.players.remove(player_name)
+    def get_info(self) -> Dict[str, Any]:
+        """
+        Returns a dictionary with game information.
+        """
+        return {
+            'title': self.title,
+            'genre': self.genre,
+            'player_count': self.player_count
+        }
 
-    def get_player_count(self):
-        return len(self.players)
+class GameLibrary:
+    """
+    Manages a collection of games.
+    """
+    def __init__(self) -> None:
+        self.games: List[Game] = []
 
-    def start_game(self):
-        if len(self.players) < 2:
-            raise ValueError("Not enough players to start the game.")
-        print("Game started with players:", self.players)
+    def add_game(self, game: Game) -> None:
+        """
+        Adds a game to the library.
+        """
+        self.games.append(game)
 
-    def optimize_performance(self):
-        # Removing duplicates to optimize space
-        self.players = list(set(self.players))
-
-    def reset_game(self):
-        self.players.clear()
-        print("Game reset, players cleared.")
+    def get_all_games(self) -> List[Dict[str, Any]]:
+        """
+        Returns a list of all games in the library as dictionaries.
+        """
+        return [game.get_info() for game in self.games]
 
 if __name__ == '__main__':
-    game_manager = GameManager()
-    game_manager.add_player('Alice')
-    game_manager.add_player('Bob')
-    game_manager.optimize_performance()
-    print("Current player count:", game_manager.get_player_count())
-    game_manager.start_game()
-    game_manager.reset_game()
+    library = GameLibrary()
+    library.add_game(Game('The Legend of Zelda', 'Action-Adventure', 1))
+    library.add_game(Game('Fortnite', 'Battle Royale', 100))
+    print(library.get_all_games())
