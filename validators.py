@@ -1,15 +1,37 @@
-def validate_input(data):
-    if not isinstance(data, dict):
-        raise ValueError("Input must be a dictionary.")
-    if 'name' not in data or not isinstance(data['name'], str):
-        raise ValueError("'name' must be a string.")
-    if 'age' not in data or not isinstance(data['age'], int) or data['age'] < 0:
-        raise ValueError("'age' must be a non-negative integer.")
-    return True
+import re
 
-def validate_email(email):
-    import re
-    email_regex = r'^[\w.-]+@[\w.-]+\.\w{2,}$'
-    if not re.match(email_regex, email):
-        raise ValueError("Invalid email format.")
-    return True
+def validate_username(username):
+    """
+    Validates the provided username.
+    Conditions:
+    - Must be alphanumeric
+    - Length should be between 3 and 15 characters
+    """
+    if not re.match('^[A-Za-z0-9]{3,15}$', username):
+        raise ValueError('Username must be 3-15 characters long and alphanumeric.')
+
+
+def validate_score(score):
+    """
+    Validates the provided score.
+    Conditions:
+    - Must be a non-negative integer
+    """
+    if not isinstance(score, int) or score < 0:
+        raise ValueError('Score must be a non-negative integer.')
+
+
+def validate_game_input(username, score):
+    """
+    Validates both username and score before processing the game.
+    """
+    validate_username(username)
+    validate_score(score)
+
+if __name__ == '__main__':
+    # Example of validation usage
+    try:
+        validate_game_input('Player1', 100)
+        print('Input is valid!')
+    except ValueError as e:
+        print(f'Validation error: {e}')
