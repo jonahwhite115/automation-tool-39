@@ -1,24 +1,41 @@
 import logging
-import os
-from logging.handlers import RotatingFileHandler
 
-# Create a logger object
-logger = logging.getLogger('GameLogger')
-logger.setLevel(logging.DEBUG)
+class Logger:
+    def __init__(self, name):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.DEBUG)
+        handler = logging.FileHandler('game_log.log')
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
-# Define log file path
-log_file_path = os.path.join(os.getcwd(), 'game.log')
+    def log_debug(self, message):
+        try:
+            self.logger.debug(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log debug message: {e}')
 
-# Create a rotating file handler
-handler = RotatingFileHandler(log_file_path, maxBytes=5*1024*1024, backupCount=3)
-handler.setLevel(logging.DEBUG)
+    def log_info(self, message):
+        try:
+            self.logger.info(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log info message: {e}')
 
-# Create a formatter and set it for the handler
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
+    def log_warning(self, message):
+        try:
+            self.logger.warning(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log warning message: {e}')
 
-# Add the handler to the logger
-logger.addHandler(handler)
+    def log_error(self, message):
+        try:
+            self.logger.error(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log error message: {e}')
 
-# Logging example
-logger.info('Logger setup complete. Ready to log events.')
+    def log_critical(self, message):
+        try:
+            self.logger.critical(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log critical message: {e}')
