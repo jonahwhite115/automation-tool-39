@@ -1,45 +1,31 @@
-from typing import List, Dict, Any
+import random
+import sys
 
 class Game:
-    """
-    Represents a game instance with attributes like title, genre, and player count.
-    """
-    def __init__(self, title: str, genre: str, player_count: int) -> None:
-        self.title = title
-        self.genre = genre
-        self.player_count = player_count
+    def __init__(self):
+        self.score = 0
+        self.max_score = 100
+        self.input_choices = ['a', 'b', 'c']
 
-    def get_info(self) -> Dict[str, Any]:
-        """
-        Returns a dictionary with game information.
-        """
-        return {
-            'title': self.title,
-            'genre': self.genre,
-            'player_count': self.player_count
-        }
+    def validate_input(self, user_input):
+        if user_input not in self.input_choices:
+            raise ValueError(f"Invalid choice: {user_input}. Please choose from {self.input_choices}.")
 
-class GameLibrary:
-    """
-    Manages a collection of games.
-    """
-    def __init__(self) -> None:
-        self.games: List[Game] = []
+    def play(self):
+        print("Welcome to the game!")
+        while self.score < self.max_score:
+            user_input = input(f"Current score: {self.score}. Choose 'a', 'b', or 'c': ")
+            try:
+                self.validate_input(user_input)
+                self.update_score(user_input)
+            except ValueError as e:
+                print(e)
 
-    def add_game(self, game: Game) -> None:
-        """
-        Adds a game to the library.
-        """
-        self.games.append(game)
+        print("Congratulations! You've reached the maximum score!")
 
-    def get_all_games(self) -> List[Dict[str, Any]]:
-        """
-        Returns a list of all games in the library as dictionaries.
-        """
-        return [game.get_info() for game in self.games]
+    def update_score(self, choice):
+        self.score += random.randint(1, 10)  # Simulate scoring
 
 if __name__ == '__main__':
-    library = GameLibrary()
-    library.add_game(Game('The Legend of Zelda', 'Action-Adventure', 1))
-    library.add_game(Game('Fortnite', 'Battle Royale', 100))
-    print(library.get_all_games())
+    game = Game()
+    game.play()
