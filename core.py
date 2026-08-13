@@ -1,31 +1,23 @@
-import random
-import sys
+import json
 
-class Game:
+class GameInput:
     def __init__(self):
-        self.score = 0
-        self.max_score = 100
-        self.input_choices = ['a', 'b', 'c']
+        self.valid_actions = ['move', 'attack', 'defend', 'heal']
 
-    def validate_input(self, user_input):
-        if user_input not in self.input_choices:
-            raise ValueError(f"Invalid choice: {user_input}. Please choose from {self.input_choices}.")
+    def validate_action(self, action):
+        if action not in self.valid_actions:
+            raise ValueError(f'Invalid action: {action}')
 
-    def play(self):
-        print("Welcome to the game!")
-        while self.score < self.max_score:
-            user_input = input(f"Current score: {self.score}. Choose 'a', 'b', or 'c': ")
-            try:
-                self.validate_input(user_input)
-                self.update_score(user_input)
-            except ValueError as e:
-                print(e)
-
-        print("Congratulations! You've reached the maximum score!")
-
-    def update_score(self, choice):
-        self.score += random.randint(1, 10)  # Simulate scoring
+def main_loop():
+    game_input = GameInput()
+    while True:
+        user_input = input('Enter your action: ')
+        try:
+            game_input.validate_action(user_input)
+            print(f'Action {user_input} executed.')
+        except ValueError as e:
+            print(e)
+            print('Please choose a valid action from the list: move, attack, defend, heal.')
 
 if __name__ == '__main__':
-    game = Game()
-    game.play()
+    main_loop()
