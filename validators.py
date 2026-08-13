@@ -1,33 +1,33 @@
-import re
-
-class ValidationError(Exception):
-    pass
-
-def validate_username(username):
-    if not isinstance(username, str):
-        raise ValidationError('Username must be a string.')
-    if not (3 <= len(username) <= 20):
-        raise ValidationError('Username must be between 3 and 20 characters.')
-    if not re.match('^[a-zA-Z0-9_]+$', username):
-        raise ValidationError('Username can only contain letters, numbers, and underscores.')
+def validate_player_score(score):
+    """
+    Validates the player's score.
+    Raises ValueError if the score is invalid.
+    """
+    if not isinstance(score, (int, float)):
+        raise ValueError('Score must be a number.')
+    if score < 0:
+        raise ValueError('Score cannot be negative.')
     return True
 
 
-def validate_password(password):
-    if not isinstance(password, str):
-        raise ValidationError('Password must be a string.')
-    if len(password) < 8:
-        raise ValidationError('Password must be at least 8 characters long.')
-    if not any(char.isdigit() for char in password):
-        raise ValidationError('Password must contain at least one digit.')
-    if not any(char.isupper() for char in password):
-        raise ValidationError('Password must contain at least one uppercase letter.')
+def validate_game_state(state):
+    """
+    Validates the current game state.
+    Raises ValueError if the state is not valid.
+    """
+    valid_states = ['ongoing', 'paused', 'finished']
+    if state not in valid_states:
+        raise ValueError(f'State must be one of {valid_states}.')
     return True
 
 
-def validate_email(email):
-    if not isinstance(email, str):
-        raise ValidationError('Email must be a string.')
-    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-        raise ValidationError('Invalid email format.')
+def validate_player_action(action):
+    """
+    Validates the player's action.
+    Raises ValueError if the action is not valid.
+    """
+    valid_actions = ['move', 'attack', 'defend']
+    if action not in valid_actions:
+        raise ValueError(f'Action must be one of {valid_actions}.')
     return True
+
