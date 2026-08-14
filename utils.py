@@ -1,26 +1,24 @@
 import time
 import requests
-from requests.exceptions import RequestException
 
-def retry_request(url, max_retries=3, backoff_factor=1):
-    """
-    Perform a network request with retry logic.
-    
-    :param url: URL to make the request to.
-    :param max_retries: Maximum number of retries.
-    :param backoff_factor: Backoff factor for wait time.
-    :return: Response object if successful.
-    """
+
+def retry_request(url, max_retries=3, wait_time=2):
+    """Performs a GET request with retry logic."""
     retries = 0
     while retries < max_retries:
         try:
             response = requests.get(url)
             response.raise_for_status()  # Raise an error for bad responses
-            return response
-        except RequestException as e:
-            print(f"Request failed: {e}")
-            retries += 1
-            wait_time = backoff_factor * (2 ** (retries - 1))
-            print(f"Retrying in {wait_time} seconds...")
-            time.sleep(wait_time)
-    raise Exception(f"Failed to retrieve data from {url} after {max_retries} attempts")
+            return response.json()  # Return JSON response if successful
+        except requests.exceptions.HTTPError as http_err:
+            print(f'HTTP error occurred: {http_err}')
+        except requests.exceptions.RequestException as err:
+            print(f'Error occurred: {err}')
+        retries += 1
+        time.sleep(wait_time)  # Wait before retrying
+    raise Exception('Max retries exceeded')
+
+
+# Example of usage:
+# data = retry_request('https://api.example.com/data')
+# print(data)
