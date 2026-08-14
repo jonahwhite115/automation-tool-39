@@ -1,38 +1,41 @@
 import logging
 
-class Logger:
-    def __init__(self, name='DefaultLogger'):
+# Configure the logger
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+class CustomLogger:
+    def __init__(self, name):
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.DEBUG)
 
-        # Create console handler
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+    def log_info(self, message):
+        try:
+            self.logger.info(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log info: {e}')
 
-        # Create formatter and add it to the handler
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
+    def log_warning(self, message):
+        try:
+            self.logger.warning(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log warning: {e}')
 
-        # Add the handler to the logger
-        self.logger.addHandler(ch)
+    def log_error(self, message):
+        try:
+            self.logger.error(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log error: {e}')
 
-    def debug(self, message):
-        self.logger.debug(message)
+    def log_debug(self, message):
+        try:
+            self.logger.debug(message)
+        except Exception as e:
+            self.logger.error(f'Failed to log debug: {e}')
 
-    def info(self, message):
-        self.logger.info(message)
-
-    def warning(self, message):
-        self.logger.warning(message)
-
-    def error(self, message):
-        self.logger.error(message)
-
-    def critical(self, message):
-        self.logger.critical(message)
-
-# Example usage
+# Example of using the CustomLogger
 if __name__ == '__main__':
-    log = Logger('GameLogger')
-    log.info('Game started.')
-    log.error('Error loading resources.')
+    custom_logger = CustomLogger(__name__)
+    custom_logger.log_info('This is an info message.')
+    custom_logger.log_warning('This is a warning message.')
+    custom_logger.log_error('This is an error message.')
+    custom_logger.log_debug('This is a debug message.')
