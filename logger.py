@@ -1,31 +1,24 @@
 import logging
+from logging.handlers import RotatingFileHandler
 
-# Configure the logger
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 
-class Logger:
-    def __init__(self, name):
-        self.logger = logging.getLogger(name)
+def setup_logger(name, log_file, level=logging.INFO):
+    """Function to set up a logger with rotation"""  
+    logger = logging.getLogger(name)  
+    logger.setLevel(level)  
 
-    def info(self, msg):
-        self.logger.info(msg)
+    # Create a rotating file handler  
+    handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3)  
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  
+    handler.setFormatter(formatter)  
 
-    def warning(self, msg):
-        self.logger.warning(msg)
+    if not logger.handlers:
+        logger.addHandler(handler)  
+    return logger
 
-    def error(self, msg):
-        self.logger.error(msg)
 
-    def debug(self, msg):
-        self.logger.debug(msg)
-
-    def critical(self, msg):
-        self.logger.critical(msg)
-
-# Example usage
-if __name__ == '__main__':
-    log = Logger('game_logger')
-    log.info('Game started')
-    log.warning('Low health warning')
-    log.error('Error loading level')
+# Example usage  
+if __name__ == '__main__':  
+    my_logger = setup_logger('game_logger', 'game.log')  
+    my_logger.info('This is an info message.')  
+    my_logger.error('This is an error message.')  
