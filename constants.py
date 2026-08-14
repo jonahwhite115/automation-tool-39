@@ -1,34 +1,32 @@
-DEFAULT_CONFIG = {
-    'fullscreen': False,
-    'resolution': (1920, 1080),
-    'volume': 0.5,
-    'controls': {
-        'move_up': 'W',
-        'move_down': 'S',
-        'move_left': 'A',
-        'move_right': 'D',
-        'shoot': 'SPACE',
-    },
-}
-
-import json
 import os
 
-class ConfigLoader:
-    def __init__(self, config_file):
-        self.config_file = config_file
-        self.config = DEFAULT_CONFIG
-        self.load_config()
+# Constants for game settings
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+FPS = 60
 
-    def load_config(self):
-        if os.path.isfile(self.config_file):
-            with open(self.config_file, 'r') as file:
-                user_config = json.load(file)
-            self.config = {**DEFAULT_CONFIG, **user_config}
+# Colors in RGB format
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 
-    def get(self, key, default=None):
-        return self.config.get(key, default)
+# File paths
+ASSETS_DIR = os.path.join('assets')
+IMAGES_DIR = os.path.join(ASSETS_DIR, 'images')
+SOUNDS_DIR = os.path.join(ASSETS_DIR, 'sounds')
 
-# Example usage
-# config_loader = ConfigLoader('user_config.json')
-# fullscreen_setting = config_loader.get('fullscreen')
+# Game states
+MENU = 'menu'
+PLAYING = 'playing'
+PAUSED = 'paused'
+GAME_OVER = 'game_over'
+
+# Default settings
+DEFAULT_VOLUME = 0.5
+DEFAULT_DIFFICULTY = 'normal'
+
+# Other game constant values
+MAX_SCORE = 1000
+PLAYER_LIVES = 3
