@@ -1,23 +1,25 @@
-import json
+import time
 
-class GameInput:
+class GameProcessor:
     def __init__(self):
-        self.valid_actions = ['move', 'attack', 'defend', 'heal']
+        self.games = []
+        self.execution_times = []
 
-    def validate_action(self, action):
-        if action not in self.valid_actions:
-            raise ValueError(f'Invalid action: {action}')
+    def add_game(self, game):
+        self.games.append(game)
 
-def main_loop():
-    game_input = GameInput()
-    while True:
-        user_input = input('Enter your action: ')
-        try:
-            game_input.validate_action(user_input)
-            print(f'Action {user_input} executed.')
-        except ValueError as e:
-            print(e)
-            print('Please choose a valid action from the list: move, attack, defend, heal.')
+    def process_games(self):
+        start = time.perf_counter()
+        for game in self.games:
+            self.process_single_game(game)
+        end = time.perf_counter()
+        print(f'Processed {len(self.games)} games in {end - start:.4f} seconds')
 
-if __name__ == '__main__':
-    main_loop()
+    def process_single_game(self, game):
+        # Example processing logic
+        time.sleep(0.1)  # Simulate a time-consuming operation
+
+    def optimize_processing(self):
+        if len(self.games) > 5:
+            self.games = self.games[:5]  # Limit to first 5 games
+        self.process_games()
