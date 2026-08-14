@@ -1,23 +1,28 @@
 class GameError(Exception):
-    """Base class for exceptions in the gaming module."""
-    pass
+    """Base class for exceptions in the game module."""
+    def __init__(self, message):
+        super().__init__(message)
 
-class PlayerError(GameError):
-    """Exception raised for errors related to player actions."""
-    def __init__(self, message: str) -> None:
-        self.message = message
-        super().__init__(self.message)
+class InvalidMoveError(GameError):
+    """Raised when an invalid move is attempted."""
+    def __init__(self, move):
+        message = f"Invalid move attempted: {move}"
+        super().__init__(message)
 
-class GameLoadError(GameError):
-    """Exception raised when a game fails to load."""
-    def __init__(self, game_name: str) -> None:
-        self.game_name = game_name
-        self.message = f'Failed to load game: {game_name}'
-        super().__init__(self.message)
+class PlayerNotFoundError(GameError):
+    """Raised when a player is not found in the game."""
+    def __init__(self, player_name):
+        message = f"Player not found: {player_name}"
+        super().__init__(message)
 
-class InvalidInputError(GameError):
-    """Exception raised for invalid input provided by the user."""
-    def __init__(self, input_value: str) -> None:
-        self.input_value = input_value
-        self.message = f'Invalid input: {input_value}'
-        super().__init__(self.message)
+class GameAlreadyStartedError(GameError):
+    """Raised when an action is attempted after the game has started."""
+    def __init__(self):
+        message = "Cannot perform action: game has already started"
+        super().__init__(message)
+
+class InsufficientResourcesError(GameError):
+    """Raised when there are not enough resources for an action."""
+    def __init__(self, needed, available):
+        message = f"Insufficient resources: needed {needed}, available {available}"
+        super().__init__(message)
