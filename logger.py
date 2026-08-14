@@ -1,25 +1,29 @@
 import logging
-from logging.handlers import RotatingFileHandler
 
+# Configure logging settings
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def setup_logger(name, log_file, level=logging.INFO):
-    # Create a logger with the given name
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    
-    # Create a rotating file handler
-    handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    
-    # Add the handler to the logger
-    logger.addHandler(handler)
-    
-    return logger
+class Logger:
+    def __init__(self, name):
+        self.name = name  
+        self.logger = logging.getLogger(name)
 
-# Example usage
-if __name__ == '__main__':
-    log = setup_logger('GameLogger', 'game_log.log')
-    log.info('Logger setup complete.')
-    log.warning('This is a warning message.')
-    log.error('This is an error message.')
+    def debug(self, message):
+        self.logger.debug(message)
+
+    def info(self, message):
+        self.logger.info(message)
+
+    def warning(self, message):
+        self.logger.warning(message)
+
+    def error(self, message):
+        self.logger.error(message)
+
+    def critical(self, message):
+        self.logger.critical(message)
+
+# Initialize the logger instance
+core_logger = Logger('core')
+core_logger.info('Logger initialized')
