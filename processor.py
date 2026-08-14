@@ -1,27 +1,27 @@
 import random
-from typing import List, Dict, Any
+import time
+from validators import validate_input
 
+class GameProcessor:
+    def __init__(self):
+        self.running = True
 
-def calculate_score(player_stats: Dict[str, Any]) -> int:
-    """Calculate the score based on player statistics."""
-    base_score = player_stats.get('base_score', 0)
-    level_multiplier = player_stats.get('level', 1) * 10
-    score = base_score + level_multiplier
-    return score
+    def start(self):
+        while self.running:
+            user_input = input("Enter your command: ")
+            if self.process_input(user_input):
+                print("Processed successfully.")
+            else:
+                print("Invalid command, please try again.")
 
+    def process_input(self, user_input):
+        if validate_input(user_input):
+            # Simulated processing logic
+            print(f"Processing command: {user_input}")
+            time.sleep(random.uniform(0.5, 1.5))  # Simulating processing time
+            return True
+        return False
 
-def select_random_item(items: List[str]) -> str:
-    """Select a random item from a list of items."""
-    if not items:
-        raise ValueError('Item list cannot be empty')
-    return random.choice(items)
-
-
-def filter_active_players(players: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Filter out players who are not active."""
-    return [player for player in players if player.get('active', False)]
-
-
-def log_player_action(player_id: str, action: str) -> None:
-    """Log a specific action taken by a player."""
-    print(f'Player {player_id} performed action: {action}')
+if __name__ == '__main__':
+    game_processor = GameProcessor()
+    game_processor.start()
