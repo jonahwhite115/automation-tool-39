@@ -1,19 +1,28 @@
+import json
 import os
 
-class Config:
-    """Configuration management for the application."""
-    def __init__(self):
-        self.env = os.getenv('ENVIRONMENT', 'development')
-        self.database_url = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
-        self.logging_level = os.getenv('LOGGING_LEVEL', 'INFO')
+class ConfigLoader:
+    def __init__(self, default_config_path: str, user_config_path: str):
+        self.default_config = self.load_json(default_config_path)
+        self.user_config = self.load_json(user_config_path) if os.path.exists(user_config_path) else {}
+        self.final_config = self.merge_configs()
 
-    def display_config(self):
-        """Prints the current configuration values."""
-        print(f'Environment: {self.env}')
-        print(f'Database URL: {self.database_url}')
-        print(f'Logging Level: {self.logging_level}')  
+    def load_json(self, path: str) -> dict:
+        """Load JSON configuration from a file."""
+        with open(path, 'r') as file:
+            return json.load(file)
+
+    def merge_configs(self) -> dict:
+        """Merge user config with default config."""
+        config = self.default_config.copy()
+        config.update(self.user_config)
+        return config
+
+    def get(self, key: str, default=None):
+        """Get a configuration value, return default if not found."""
+        return self.final_config.get(key, default)
 
 # Example usage
 if __name__ == '__main__':
-    config = Config()
-    config.display_config()
+    loader = ConfigLoader('default_config.json', 'user_config.json')
+    print(loader.get('some_setting', 'default_value'))
