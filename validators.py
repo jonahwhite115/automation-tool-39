@@ -1,33 +1,20 @@
-def validate_player_score(score):
+def validate_input(user_input):
     """
-    Validates the player's score.
-    Raises ValueError if the score is invalid.
+    Validates user input to ensure it is within expected parameters.
+    :param user_input: The input from the user.
+    :return: True if input is valid, False otherwise.
     """
-    if not isinstance(score, (int, float)):
-        raise ValueError('Score must be a number.')
-    if score < 0:
-        raise ValueError('Score cannot be negative.')
+    if not isinstance(user_input, str):
+        return False
+    if len(user_input) < 1:
+        return False
     return True
 
-
-def validate_game_state(state):
-    """
-    Validates the current game state.
-    Raises ValueError if the state is not valid.
-    """
-    valid_states = ['ongoing', 'paused', 'finished']
-    if state not in valid_states:
-        raise ValueError(f'State must be one of {valid_states}.')
-    return True
-
-
-def validate_player_action(action):
-    """
-    Validates the player's action.
-    Raises ValueError if the action is not valid.
-    """
-    valid_actions = ['move', 'attack', 'defend']
-    if action not in valid_actions:
-        raise ValueError(f'Action must be one of {valid_actions}.')
-    return True
-
+if __name__ == '__main__':
+    while True:
+        user_input = input('Enter your command: ')
+        if validate_input(user_input):
+            print(f'Valid input: {user_input}')
+            # Proceed with processing the command
+        else:
+            print('Invalid input. Please try again.')
