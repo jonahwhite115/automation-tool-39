@@ -1,25 +1,30 @@
 import time
 
-class GameProcessor:
+class PerformanceTracker:
     def __init__(self):
-        self.games = []
-        self.execution_times = []
+        self.start_time = None
+        self.end_time = None
 
-    def add_game(self, game):
-        self.games.append(game)
+    def start(self):
+        self.start_time = time.perf_counter()
 
-    def process_games(self):
-        start = time.perf_counter()
-        for game in self.games:
-            self.process_single_game(game)
-        end = time.perf_counter()
-        print(f'Processed {len(self.games)} games in {end - start:.4f} seconds')
+    def stop(self):
+        self.end_time = time.perf_counter()
 
-    def process_single_game(self, game):
-        # Example processing logic
-        time.sleep(0.1)  # Simulate a time-consuming operation
+    def duration(self):
+        return self.end_time - self.start_time if self.end_time else None
 
-    def optimize_processing(self):
-        if len(self.games) > 5:
-            self.games = self.games[:5]  # Limit to first 5 games
-        self.process_games()
+
+def optimize_function(data):
+    tracker = PerformanceTracker()
+    tracker.start()  
+    # Perform some CPU-intensive computations
+    result = sum(item for item in data if item % 2 == 0)
+    tracker.stop()
+    duration = tracker.duration()  
+    print(f"Function executed in {duration:.6f} seconds")
+    return result
+
+if __name__ == '__main__':
+    sample_data = range(1, 1000000)
+    optimize_function(sample_data)
