@@ -1,25 +1,35 @@
-import requests
-import time
+import random
+import logging
 
-class NetworkError(Exception):
+class GameError(Exception):
     pass
 
-def fetch_data(url, retries=3, delay=2):
-    for attempt in range(retries):
+class GameHandler:
+    def __init__(self):
+        self.score = 0
+        logging.basicConfig(level=logging.INFO)
+
+    def play(self):
         try:
-            response = requests.get(url)
-            response.raise_for_status()  # Raise an error for bad responses
-            return response.json()  # Return the JSON data if successful
-        except requests.exceptions.RequestException as e:
-            if attempt < retries - 1:
-                time.sleep(delay)  # Wait before retrying
-            else:
-                raise NetworkError(f'Failed to fetch data after {retries} attempts') from e
+            result = self.perform_action()
+            logging.info(f'Action result: {result}')
+        except GameError as e:
+            logging.error(f'Game error occurred: {str(e)}')
+        except Exception as e:
+            logging.exception('An unexpected error occurred')
+
+    def perform_action(self):
+        action = random.choice(['win', 'lose', 'error'])
+        if action == 'error':
+            raise GameError('Simulated error during action')
+        elif action == 'win':
+            self.score += 10
+            return 'You won!'
+        else:
+            self.score -= 5
+            return 'You lost!'
 
 if __name__ == '__main__':
-    url = 'https://api.example.com/data'
-    try:
-        data = fetch_data(url)
-        print(data)
-    except NetworkError as ne:
-        print(ne)
+    handler = GameHandler()
+    handler.play()
+    logging.info(f'Final score: {handler.score}')
