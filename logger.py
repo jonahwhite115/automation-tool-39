@@ -1,34 +1,38 @@
 import logging
-from typing import Any, Optional
 
+class Logger:
+    def __init__(self, name='DefaultLogger'):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.DEBUG)
 
-def setup_logger(name: str, level: Optional[int] = logging.INFO) -> logging.Logger:
-    """Set up a logger with the specified name and logging level."""
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    handler = logging.StreamHandler()
-    handler.setLevel(level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    return logger
+        # Create console handler
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
 
+        # Create formatter and add it to the handler
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
 
-def log_info(logger: logging.Logger, message: str, *args: Any) -> None:
-    """Log an informational message."""
-    logger.info(message, *args)
+        # Add the handler to the logger
+        self.logger.addHandler(ch)
 
+    def debug(self, message):
+        self.logger.debug(message)
 
-def log_error(logger: logging.Logger, message: str, *args: Any) -> None:
-    """Log an error message."""
-    logger.error(message, *args)
+    def info(self, message):
+        self.logger.info(message)
 
+    def warning(self, message):
+        self.logger.warning(message)
 
-def log_warning(logger: logging.Logger, message: str, *args: Any) -> None:
-    """Log a warning message."""
-    logger.warning(message, *args)
+    def error(self, message):
+        self.logger.error(message)
 
+    def critical(self, message):
+        self.logger.critical(message)
 
-def log_debug(logger: logging.Logger, message: str, *args: Any) -> None:
-    """Log a debug message."""
-    logger.debug(message, *args)
+# Example usage
+if __name__ == '__main__':
+    log = Logger('GameLogger')
+    log.info('Game started.')
+    log.error('Error loading resources.')
