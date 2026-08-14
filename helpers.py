@@ -1,29 +1,46 @@
-import time
-import requests
-from requests.exceptions import RequestException
+from typing import List, Dict, Any
 
 
-def retry_request(url, max_retries=3, delay=2):
+def calculate_player_score(player_data: Dict[str, Any]) -> int:
     """
-    Perform a GET request with retry logic.
-    
-    :param url: The URL to request.
-    :param max_retries: The maximum number of retries.
-    :param delay: The delay between retries in seconds.
-    :return: The response object if successful, None otherwise.
+    Calculate the total score for a player based on their game statistics.
+
+    Args:
+        player_data (Dict[str, Any]): A dictionary containing player's data including scores.
+
+    Returns:
+        int: The total score for the player.
     """
-    attempt = 0
-    while attempt < max_retries:
-        try:
-            response = requests.get(url)
-            response.raise_for_status()  # Raise an error for bad responses
-            return response
-        except RequestException as e:
-            attempt += 1
-            print(f'Attempt {attempt} failed: {e}')
-            if attempt < max_retries:
-                print(f'Retrying in {delay} seconds...')
-                time.sleep(delay)
-            else:
-                print('All attempts failed.')
-    return None
+    total_score = 0
+    for score in player_data.get('scores', []):
+        total_score += score
+    return total_score
+
+
+def filter_high_scores(scores: List[int], threshold: int) -> List[int]:
+    """
+    Filter scores above a specified threshold.
+
+    Args:
+        scores (List[int]): A list of scores to filter.
+        threshold (int): The score threshold.
+
+    Returns:
+        List[int]: A list of scores that are greater than the threshold.
+    """
+    high_scores = [score for score in scores if score > threshold]
+    return high_scores
+
+
+def sort_player_scores(scores: List[int], reverse: bool = False) -> List[int]:
+    """
+    Sort a list of player scores in ascending or descending order.
+
+    Args:
+        scores (List[int]): A list of scores to sort.
+        reverse (bool): Whether to sort in descending order. Defaults to False.
+
+    Returns:
+        List[int]: A sorted list of scores.
+    """
+    return sorted(scores, reverse=reverse)
