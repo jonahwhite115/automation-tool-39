@@ -1,30 +1,35 @@
-import time
-
-class PerformanceTracker:
-    def __init__(self):
-        self.start_time = None
-        self.end_time = None
-
-    def start(self):
-        self.start_time = time.perf_counter()
-
-    def stop(self):
-        self.end_time = time.perf_counter()
-
-    def duration(self):
-        return self.end_time - self.start_time if self.end_time else None
+import json
+import os
 
 
-def optimize_function(data):
-    tracker = PerformanceTracker()
-    tracker.start()  
-    # Perform some CPU-intensive computations
-    result = sum(item for item in data if item % 2 == 0)
-    tracker.stop()
-    duration = tracker.duration()  
-    print(f"Function executed in {duration:.6f} seconds")
-    return result
+def load_game_data(file_path):
+    """Load game data from a JSON file."""
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    with open(file_path, 'r') as file:
+        try:
+            return json.load(file)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error decoding JSON: {e}")
+
+
+def save_game_data(file_path, data):
+    """Save game data to a JSON file."""
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
+
+
+def update_game_data(file_path, new_data):
+    """Update existing game data with new data."""
+    existing_data = load_game_data(file_path)
+    existing_data.update(new_data)
+    save_game_data(file_path, existing_data)
+
 
 if __name__ == '__main__':
-    sample_data = range(1, 1000000)
-    optimize_function(sample_data)
+    sample_data = {'level': 1, 'score': 1500}
+    save_game_data('game_data.json', sample_data)
+    loaded_data = load_game_data('game_data.json')
+    print(loaded_data)
+    update_game_data('game_data.json', {'score': 2000})
+    print(load_game_data('game_data.json'))
