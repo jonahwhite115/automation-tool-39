@@ -1,28 +1,39 @@
 class GameError(Exception):
-    """Base class for exceptions in the game module."""
-    def __init__(self, message):
+    """
+    Custom exception for game-related errors.
+    """
+    def __init__(self, message: str) -> None:
         super().__init__(message)
+        self.message = message
 
 class InvalidMoveError(GameError):
-    """Raised when an invalid move is attempted."""
-    def __init__(self, move):
-        message = f"Invalid move attempted: {move}"
-        super().__init__(message)
+    """
+    Exception raised for invalid moves in the game.
+    """  
+    def __init__(self, move: str) -> None:
+        super().__init__(f"Invalid move: {move}")
+        self.move = move
 
-class PlayerNotFoundError(GameError):
-    """Raised when a player is not found in the game."""
-    def __init__(self, player_name):
-        message = f"Player not found: {player_name}"
-        super().__init__(message)
+class GameNotStartedError(GameError):
+    """
+    Exception raised when an action is attempted before the game starts.
+    """  
+    def __init__(self) -> None:
+        super().__init__("Game has not started yet.")
 
-class GameAlreadyStartedError(GameError):
-    """Raised when an action is attempted after the game has started."""
-    def __init__(self):
-        message = "Cannot perform action: game has already started"
-        super().__init__(message)
+class PlayerAlreadyJoinedError(GameError):
+    """
+    Exception raised when a player tries to join an already joined game.
+    """  
+    def __init__(self, player_name: str) -> None:
+        super().__init__(f"Player '{player_name}' has already joined.")
+        self.player_name = player_name
 
 class InsufficientResourcesError(GameError):
-    """Raised when there are not enough resources for an action."""
-    def __init__(self, needed, available):
-        message = f"Insufficient resources: needed {needed}, available {available}"
-        super().__init__(message)
+    """
+    Exception raised when resources are insufficient for an action.
+    """  
+    def __init__(self, required: int, available: int) -> None:
+        super().__init__(f"Insufficient resources: required {required}, available {available}")
+        self.required = required
+        self.available = available
