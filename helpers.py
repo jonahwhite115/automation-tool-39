@@ -1,46 +1,32 @@
-from typing import List, Dict, Any
+import random
+import time
+from typing import List
 
 
-def calculate_player_score(player_data: Dict[str, Any]) -> int:
-    """
-    Calculate the total score for a player based on their game statistics.
-
-    Args:
-        player_data (Dict[str, Any]): A dictionary containing player's data including scores.
-
-    Returns:
-        int: The total score for the player.
-    """
-    total_score = 0
-    for score in player_data.get('scores', []):
-        total_score += score
-    return total_score
+def random_choice(choices: List[str]) -> str:
+    """Returns a random choice from a list."
+    return random.choice(choices)
 
 
-def filter_high_scores(scores: List[int], threshold: int) -> List[int]:
-    """
-    Filter scores above a specified threshold.
-
-    Args:
-        scores (List[int]): A list of scores to filter.
-        threshold (int): The score threshold.
-
-    Returns:
-        List[int]: A list of scores that are greater than the threshold.
-    """
-    high_scores = [score for score in scores if score > threshold]
-    return high_scores
+def wait_for(seconds: int) -> None:
+    """Pauses the execution for a given number of seconds."
+    time.sleep(seconds)
 
 
-def sort_player_scores(scores: List[int], reverse: bool = False) -> List[int]:
-    """
-    Sort a list of player scores in ascending or descending order.
+def find_highest_score(scores: List[int]) -> int:
+    """Returns the highest score from a list of scores."
+    return max(scores) if scores else 0
 
-    Args:
-        scores (List[int]): A list of scores to sort.
-        reverse (bool): Whether to sort in descending order. Defaults to False.
 
-    Returns:
-        List[int]: A sorted list of scores.
-    """
-    return sorted(scores, reverse=reverse)
+def load_game_data(file_path: str) -> dict:
+    """Loads game data from a JSON file and returns it as a dictionary."
+    import json
+    with open(file_path, 'r') as file:
+        return json.load(file)
+
+
+def save_game_data(file_path: str, data: dict) -> None:
+    """Saves game data to a JSON file from a dictionary."""
+    import json
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
