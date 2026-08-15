@@ -1,35 +1,38 @@
-import random
-import logging
-
-class GameError(Exception):
-    pass
+from typing import List, Dict
 
 class GameHandler:
-    def __init__(self):
-        self.score = 0
-        logging.basicConfig(level=logging.INFO)
+    """Handles game logic and operations."""
 
-    def play(self):
+    def __init__(self, game_name: str) -> None:
+        """Initialize the game handler with a game name."""
+        self.game_name = game_name
+        self.players: List[str] = []
+
+    def add_player(self, player_name: str) -> None:
+        """Add a player to the game."""
+        self.players.append(player_name)
+
+    def remove_player(self, player_name: str) -> bool:
+        """Remove a player from the game.
+
+        Returns True if the player was removed, False otherwise."""
         try:
-            result = self.perform_action()
-            logging.info(f'Action result: {result}')
-        except GameError as e:
-            logging.error(f'Game error occurred: {str(e)}')
-        except Exception as e:
-            logging.exception('An unexpected error occurred')
+            self.players.remove(player_name)
+            return True
+        except ValueError:
+            return False
 
-    def perform_action(self):
-        action = random.choice(['win', 'lose', 'error'])
-        if action == 'error':
-            raise GameError('Simulated error during action')
-        elif action == 'win':
-            self.score += 10
-            return 'You won!'
-        else:
-            self.score -= 5
-            return 'You lost!'
+    def get_players(self) -> List[str]:
+        """Return the list of players currently in the game."""
+        return self.players
 
-if __name__ == '__main__':
-    handler = GameHandler()
-    handler.play()
-    logging.info(f'Final score: {handler.score}')
+    def start_game(self) -> None:
+        """Start the game with the current players."""
+        if len(self.players) < 2:
+            raise ValueError("Not enough players to start the game.")
+        print(f"{self.game_name} is starting with players: {', '.join(self.players)}")
+
+    def reset_game(self) -> None:
+        """Reset the game by clearing the player list."""
+        self.players.clear()
+        print(f"{self.game_name} has been reset.")
