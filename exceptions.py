@@ -1,39 +1,27 @@
 class GameError(Exception):
-    """
-    Custom exception for game-related errors.
-    """
-    def __init__(self, message: str) -> None:
+    """Base class for exceptions in the game."""
+    pass
+
+class ConfigurationError(GameError):
+    """Raised when there is a configuration error."""
+    def __init__(self, message):
         super().__init__(message)
         self.message = message
 
-class InvalidMoveError(GameError):
-    """
-    Exception raised for invalid moves in the game.
-    """  
-    def __init__(self, move: str) -> None:
-        super().__init__(f"Invalid move: {move}")
-        self.move = move
+class InvalidInputError(GameError):
+    """Raised for invalid inputs from users."""
+    def __init__(self, input_value):
+        super().__init__(f'Invalid input: {input_value}')
+        self.input_value = input_value
 
-class GameNotStartedError(GameError):
-    """
-    Exception raised when an action is attempted before the game starts.
-    """  
-    def __init__(self) -> None:
-        super().__init__("Game has not started yet.")
+class ResourceNotFoundError(GameError):
+    """Raised when a resource is not found."""
+    def __init__(self, resource_name):
+        super().__init__(f'Resource not found: {resource_name}')
+        self.resource_name = resource_name
 
-class PlayerAlreadyJoinedError(GameError):
-    """
-    Exception raised when a player tries to join an already joined game.
-    """  
-    def __init__(self, player_name: str) -> None:
-        super().__init__(f"Player '{player_name}' has already joined.")
-        self.player_name = player_name
-
-class InsufficientResourcesError(GameError):
-    """
-    Exception raised when resources are insufficient for an action.
-    """  
-    def __init__(self, required: int, available: int) -> None:
-        super().__init__(f"Insufficient resources: required {required}, available {available}")
-        self.required = required
-        self.available = available
+class NetworkError(GameError):
+    """Raised for network-related issues."""
+    def __init__(self, status_code):
+        super().__init__(f'Network error with status code: {status_code}')
+        self.status_code = status_code
