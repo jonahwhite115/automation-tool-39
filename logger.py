@@ -1,12 +1,13 @@
 import logging
 
-# Configure logging settings
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Configure the logger
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 class Logger:
     def __init__(self, name):
-        self.name = name  
         self.logger = logging.getLogger(name)
 
     def debug(self, message):
@@ -21,9 +22,13 @@ class Logger:
     def error(self, message):
         self.logger.error(message)
 
+    def exception(self, message):
+        self.logger.exception(message)
+
     def critical(self, message):
         self.logger.critical(message)
 
-# Initialize the logger instance
-core_logger = Logger('core')
-core_logger.info('Logger initialized')
+# Example of using the Logger class
+if __name__ == '__main__':
+    log = Logger(__name__)
+    log.info('Logger initialized successfully.')
