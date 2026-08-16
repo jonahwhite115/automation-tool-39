@@ -1,34 +1,32 @@
 import logging
 
 # Configure the logger
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Logger:
     def __init__(self, name):
         self.logger = logging.getLogger(name)
 
-    def debug(self, message):
-        self.logger.debug(message)
+    def debug(self, msg):
+        self.logger.debug(msg)
 
-    def info(self, message):
-        self.logger.info(message)
+    def info(self, msg):
+        self.logger.info(msg)
 
-    def warning(self, message):
-        self.logger.warning(message)
+    def warning(self, msg):
+        self.logger.warning(msg)
 
-    def error(self, message):
-        self.logger.error(message)
+    def error(self, msg):
+        self.logger.error(msg)
 
-    def exception(self, message):
-        self.logger.exception(message)
+    def critical(self, msg):
+        self.logger.critical(msg)
 
-    def critical(self, message):
-        self.logger.critical(message)
-
-# Example of using the Logger class
+# Example usage
 if __name__ == '__main__':
-    log = Logger(__name__)
-    log.info('Logger initialized successfully.')
+    app_logger = Logger('MyGameApp')
+    app_logger.info('Game started')
+    app_logger.warning('Low health warning')
+    app_logger.error('An error occurred')
+    app_logger.debug('Debugging the starting process')
