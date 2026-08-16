@@ -1,36 +1,29 @@
-import re
+def validate_player_name(name):
+    if not isinstance(name, str):
+        raise ValueError('Player name must be a string')
+    if len(name) < 1 or len(name) > 20:
+        raise ValueError('Player name must be between 1 and 20 characters')
+    return True
 
-class InputValidator:
-    @staticmethod
-    def is_valid_username(username: str) -> bool:
-        # Check if username matches the regex pattern
-        pattern = r'^[A-Za-z0-9_]{3,15}$'
-        return re.match(pattern, username) is not None
 
-    @staticmethod
-    def is_valid_password(password: str) -> bool:
-        # Check for a valid password (at least 8 characters, one uppercase, one digit)
-        if len(password) < 8:
-            return False
-        return (
-            re.search(r'[A-Z]', password) is not None and
-            re.search(r'[0-9]', password) is not None
-        )
+def validate_score(score):
+    if not isinstance(score, (int, float)):
+        raise ValueError('Score must be an integer or float')
+    if score < 0:
+        raise ValueError('Score must be non-negative')
+    return True
 
-    @staticmethod
-    def validate_email(email: str) -> bool:
-        # Simple email validation using regex
-        pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-        return re.match(pattern, email) is not None
 
-    @staticmethod
-    def validate_game_score(score: int) -> bool:
-        # Ensure score is a positive integer
-        return isinstance(score, int) and score >= 0
+def validate_level(level):
+    if not isinstance(level, int):
+        raise ValueError('Level must be an integer')
+    if level < 1 or level > 100:
+        raise ValueError('Level must be between 1 and 100')
+    return True
 
-# Example usage
-if __name__ == '__main__':
-    print(InputValidator.is_valid_username('Player123'))  # True
-    print(InputValidator.is_valid_password('Password1'))  # True
-    print(InputValidator.validate_email('user@example.com'))  # True
-    print(InputValidator.validate_game_score(100))  # True
+
+def validate_game_input(player_name, score, level):
+    validate_player_name(player_name)
+    validate_score(score)
+    validate_level(level)
+    return True
