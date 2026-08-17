@@ -1,36 +1,32 @@
 import json
 import os
 
-DEFAULT_CONFIG = {
-    'screen_resolution': '1920x1080',
-    'volume': 75,
-    'controls': {
-        'jump': 'space',
-        'move_left': 'a',
-        'move_right': 'd'
-    },
-    'language': 'English'
-}
+class ConfigError(Exception):
+    pass
 
-class ConfigLoader:
-    def __init__(self, config_file='config.json'):
-        self.config_file = config_file
-        self.config = DEFAULT_CONFIG.copy()  # Start with defaults
-        self.load_config()
+def load_config(filepath):
+    if not os.path.isfile(filepath):
+        raise ConfigError(f'Config file {filepath} does not exist.')
 
-    def load_config(self):
-        if os.path.isfile(self.config_file):
-            with open(self.config_file, 'r') as f:
-                user_config = json.load(f)
-                self.update_config(user_config)
+    try:
+        with open(filepath, 'r') as file:
+            config = json.load(file)
+    except json.JSONDecodeError:
+        raise ConfigError(f'Config file {filepath} is not a valid JSON.')
+    except Exception as e:
+        raise ConfigError(f'An error occurred while reading the config file: {str(e)}')
+    
+    required_keys = ['game_name', 'version', 'settings']
+    for key in required_keys:
+        if key not in config:
+            raise ConfigError(f'Missing required config key: {key}')
+    
+    return config
 
-    def update_config(self, user_config):
-        self.config.update(user_config)
-
-    def get_config(self):
-        return self.config
-
-# Example usage
-if __name__ == '__main__':
-    loader = ConfigLoader()
-    print(loader.get_config())
+# Example usage if needed:
+# if __name__ == '__main__':
+#     try:
+#         config = load_config('config.json')
+#         print(config)
+#     except ConfigError as e:
+#         print(e)
