@@ -1,27 +1,25 @@
 class GameError(Exception):
-    """Base class for exceptions in the game."""
+    """Base class for exceptions in the gaming module."""
     pass
 
-class ConfigurationError(GameError):
-    """Raised when there is a configuration error."""
+class PlayerNotFoundError(GameError):
+    """Raised when a player is not found."""
+    def __init__(self, player_id):
+        super().__init__(f'Player with ID {player_id} not found.')
+        self.player_id = player_id
+
+class InvalidMoveError(GameError):
+    """Raised when a move is invalid."""
+    def __init__(self, move):
+        super().__init__(f'Invalid move: {move}')
+        self.move = move
+
+class GameOverError(GameError):
+    """Raised when an operation is attempted after the game is over."""
+    def __init__(self):
+          super().__init__('Operation not allowed: Game is already over.')
+
+class ConnectionError(GameError):
+    """Raised when there is a connection issue."""
     def __init__(self, message):
         super().__init__(message)
-        self.message = message
-
-class InvalidInputError(GameError):
-    """Raised for invalid inputs from users."""
-    def __init__(self, input_value):
-        super().__init__(f'Invalid input: {input_value}')
-        self.input_value = input_value
-
-class ResourceNotFoundError(GameError):
-    """Raised when a resource is not found."""
-    def __init__(self, resource_name):
-        super().__init__(f'Resource not found: {resource_name}')
-        self.resource_name = resource_name
-
-class NetworkError(GameError):
-    """Raised for network-related issues."""
-    def __init__(self, status_code):
-        super().__init__(f'Network error with status code: {status_code}')
-        self.status_code = status_code
