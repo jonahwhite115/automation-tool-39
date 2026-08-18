@@ -1,26 +1,28 @@
-import random
-import math
+import time
+import requests
+from requests.exceptions import RequestException
 
-def generate_random_number(min_value: int, max_value: int) -> int:
-    """Generate a random integer between min_value and max_value."""
-    return random.randint(min_value, max_value)
+def retry_request(url, max_retries=3, delay=2):
+    """
+    Makes a network request to the given URL with retry logic.
+    Retries the request up to max_retries times with a delay between attempts.
+    """
+    attempts = 0
+    while attempts < max_retries:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Raise error for bad responses
+            return response.json()  # Assuming the response is JSON
+        except RequestException as e:
+            attempts += 1  
+            print(f"Attempt {attempts} failed: {e}")
+            if attempts < max_retries:
+                time.sleep(delay)  # Wait before the next attempt
+            else:
+                print("Max retries reached.")
+                return None  # Return None or raise an exception based on your needs
 
-
-def calculate_distance(point_a: tuple, point_b: tuple) -> float:
-    """Calculate the Euclidean distance between two points."""
-    return math.sqrt((point_b[0] - point_a[0]) ** 2 + (point_b[1] - point_a[1]) ** 2)
-
-
-def is_point_within_bounds(point: tuple, bounds: tuple) -> bool:
-    """Check if a point is within specified bounds."""
-    return bounds[0] <= point[0] <= bounds[2] and bounds[1] <= point[1] <= bounds[3]
-
-
-def clamp_value(value: float, min_value: float, max_value: float) -> float:
-    """Clamp a value between min_value and max_value."""
-    return max(min_value, min(value, max_value))
-
-
-def get_random_choice(choices: list) -> any:
-    """Select a random choice from a list."""
-    return random.choice(choices)
+# Example usage:
+#if __name__ == '__main__':
+#    data = retry_request('https://api.example.com/data')
+#    print(data)  # Handling data according to your needs
