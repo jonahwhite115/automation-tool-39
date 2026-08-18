@@ -1,32 +1,37 @@
 import random
-import time
-from typing import List
+import string
 
+class GameHelper:
+    @staticmethod
+    def generate_random_string(length=10):
+        """Generate a random string of fixed length."""
+        letters = string.ascii_letters
+        return ''.join(random.choice(letters) for i in range(length))
 
-def random_choice(choices: List[str]) -> str:
-    """Returns a random choice from a list."
-    return random.choice(choices)
+    @staticmethod
+    def get_user_input(prompt):
+        """Get input from the user with a prompt."""
+        return input(prompt)
 
+    @staticmethod
+    def display_message(message):
+        """Display a message to the user."""
+        print(message)
 
-def wait_for(seconds: int) -> None:
-    """Pauses the execution for a given number of seconds."
-    time.sleep(seconds)
+    @staticmethod
+    def validate_choice(choice, valid_choices):
+        """Validate if the user choice is within valid options."""
+        return choice in valid_choices
 
+    @staticmethod
+    def clear_console():
+        """Clear the console screen for better readability."""
+        import os
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-def find_highest_score(scores: List[int]) -> int:
-    """Returns the highest score from a list of scores."
-    return max(scores) if scores else 0
-
-
-def load_game_data(file_path: str) -> dict:
-    """Loads game data from a JSON file and returns it as a dictionary."
-    import json
-    with open(file_path, 'r') as file:
-        return json.load(file)
-
-
-def save_game_data(file_path: str, data: dict) -> None:
-    """Saves game data to a JSON file from a dictionary."""
-    import json
-    with open(file_path, 'w') as file:
-        json.dump(data, file, indent=4)
+# Example Usage in a game
+if __name__ == '__main__':
+    GameHelper.clear_console()
+    name = GameHelper.get_user_input('Enter your name: ')
+    GameHelper.display_message(f'Welcome to the game, {name}!')
+    GameHelper.display_message('Your random code is: ' + GameHelper.generate_random_string(8))
