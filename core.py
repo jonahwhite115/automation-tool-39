@@ -1,35 +1,49 @@
-import json
-import os
+import functools
 
+class GameAutomationCore:
+    """Core module for gaming automation with performance optimizations."""
 
-def load_game_data(file_path):
-    """Load game data from a JSON file."""
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
-    with open(file_path, 'r') as file:
-        try:
-            return json.load(file)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Error decoding JSON: {e}")
+    def __init__(self):
+        self.active_tasks = set()
+        self.state_cache = {}
 
+    def add_task(self, task_id):
+        # Use set for O(1) addition and lookup
+        self.active_tasks.add(task_id)
 
-def save_game_data(file_path, data):
-    """Save game data to a JSON file."""
-    with open(file_path, 'w') as file:
-        json.dump(data, file, indent=4)
+    @functools.lru_cache(maxsize=512)
+    def calculate_efficiency(self, task_type, stats_tuple):
+        # Cached computation for performance
+        # Simulate complex gaming calculation
+        if not stats_tuple:
+            base_score = 0
+        else:
+            base_score = sum(value for _, value in stats_tuple)
+        efficiency = (base_score * 1.5) + hash(task_type) % 50
+        return efficiency
 
+    def optimize_task_queue(self, tasks, player_stats):
+        # Batch process with cache to avoid redundant calculations
+        optimized = []
+        seen = set()
+        for task in tasks:
+            if task in seen:
+                continue
+            seen.add(task)
+            task_type = task.get('type', 'default')
+            stats = task.get('stats', player_stats)
+            stats_tuple = tuple(sorted(stats.items())) if isinstance(stats, dict) else ()
+            efficiency = self.calculate_efficiency(task_type, stats_tuple)
+            optimized.append((task, efficiency))
+        # Sort by efficiency descending
+        optimized.sort(key=lambda x: x[1], reverse=True)
+        return [item[0] for item in optimized[:10]]
 
-def update_game_data(file_path, new_data):
-    """Update existing game data with new data."""
-    existing_data = load_game_data(file_path)
-    existing_data.update(new_data)
-    save_game_data(file_path, existing_data)
-
-
-if __name__ == '__main__':
-    sample_data = {'level': 1, 'score': 1500}
-    save_game_data('game_data.json', sample_data)
-    loaded_data = load_game_data('game_data.json')
-    print(loaded_data)
-    update_game_data('game_data.json', {'score': 2000})
-    print(load_game_data('game_data.json'))
+    def process_game_loop(self, incoming_events):
+        # Optimized filtering using set
+        new_events = []
+        for event in incoming_events:
+            if event not in self.active_tasks:
+                new_events.append(event)
+                self.add_task(event)
+        return new_events
