@@ -1,43 +1,29 @@
-# Automation Tool 39
+# automation-tool-39
 
-Automation Tool 39 is a versatile Python-based utility designed to simplify and streamline repetitive tasks, enhancing productivity for developers and teams alike. This project offers an intuitive interface and a range of automation features tailored to meet daily needs.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+automation-tool-39 is a Python toolkit for automating repetitive tasks within PC games. It provides a framework for building reliable scripts that interact with game interfaces through input simulation and visual recognition.
 
 ## Features
-- **Task Scheduling**: Automatically execute scripts or commands at specified intervals, reducing manual effort.
-- **Log Management**: Generate and manage logs for all automated tasks, ensuring better tracking and debugging.
-- **Email Notifications**: Receive customizable email alerts on task completion or failure, keeping stakeholders informed in real-time.
-- **User-Friendly CLI**: A command-line interface that allows easy configuration and management of automation tasks without a steep learning curve.
+- Pixel-perfect image matching to trigger actions based on on-screen elements
+- Humanized mouse and keyboard inputs with variable timing
+- YAML-based configuration for defining complex automation sequences
+- Built-in debugging with automatic screenshot capture on errors
 
 ## Installation
 
-To install Automation Tool 39, make sure you have Python 3.6 or higher installed on your system. Then run the following commands:
-
 ```bash
-# Clone the repository
-git clone https://github.com/YourUsername/automation-tool-39.git
-
-# Navigate into the project directory
+git clone https://github.com/Developer/automation-tool-39.git
 cd automation-tool-39
-
-# Install required packages
 pip install -r requirements.txt
 ```
 
-## Basic Usage Example
+## Basic Usage
 
-Once the tool is installed, you can start using it with minimal setup. Here’s a quick example of how to create a basic task:
+```python
+from automation_tool_39 import AutomationBot
 
-```bash
-# Start the automation tool
-python main.py --schedule "daily" --task "run_analysis.py" --email "user@example.com"
+bot = AutomationBot()
+bot.load_script("gather_resources.yaml")
+bot.run()
 ```
-
-In this example, the tool will execute `run_analysis.py` daily and send an email notification to `user@example.com` upon task completion.
-
----
-
-## License
-
-![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
