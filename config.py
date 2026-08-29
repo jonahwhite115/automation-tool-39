@@ -1,32 +1,47 @@
-import json
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 
-class ConfigError(Exception):
-    pass
+LOG_FILE = 'automation_tool.log'
+MAX_LOG_SIZE = 5 * 1024 * 1024  # 5 MB
+BACKUP_COUNT = 3
+LOG_LEVEL = logging.INFO
 
-def load_config(filepath):
-    if not os.path.isfile(filepath):
-        raise ConfigError(f'Config file {filepath} does not exist.')
+def setup_logging():
+    """Set up logger with rotation for the gaming automation tool."""
+    logger = logging.getLogger('automation-tool-39')
+    if logger.hasHandlers():
+        logger.handlers.clear()
+    logger.setLevel(LOG_LEVEL)
 
-    try:
-        with open(filepath, 'r') as file:
-            config = json.load(file)
-    except json.JSONDecodeError:
-        raise ConfigError(f'Config file {filepath} is not a valid JSON.')
-    except Exception as e:
-        raise ConfigError(f'An error occurred while reading the config file: {str(e)}')
-    
-    required_keys = ['game_name', 'version', 'settings']
-    for key in required_keys:
-        if key not in config:
-            raise ConfigError(f'Missing required config key: {key}')
-    
-    return config
+    log_dir = 'logs'
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
 
-# Example usage if needed:
-# if __name__ == '__main__':
-#     try:
-#         config = load_config('config.json')
-#         print(config)
-#     except ConfigError as e:
-#         print(e)
+    log_path = os.path.join(log_dir, LOG_FILE)
+
+    file_handler = RotatingFileHandler(
+        log_path, maxBytes=MAX_LOG_SIZE, backupCount=BACKUP_COUNT
+    )
+    file_handler.setLevel(LOG_LEVEL)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(LOG_LEVEL)
+
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    logger.info('Logger setup complete with rotation enabled')
+    return logger
+
+if __name__ == '__main__':
+    logger = setup_logging()
+    logger.info('Testing the logger')
+    logger.warning('This is a test warning')
