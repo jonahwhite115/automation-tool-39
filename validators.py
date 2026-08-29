@@ -1,72 +1,78 @@
+from typing import Any, Dict, List, Optional
 import re
-from typing import Any, Dict, List
 
-def validate_player_name(name: Any) -> str:
-    """Validate player name for edge cases like empty, short, long and invalid chars."""
-    if not isinstance(name, str):
-        raise ValueError("Player name must be a string")
-    name = name.strip()
-    if not name:
-        raise ValueError("Player name cannot be empty")
-    if len(name) < 3:
-        raise ValueError("Player name must be at least 3 characters long")
-    if len(name) > 16:
-        raise ValueError("Player name cannot exceed 16 characters")
-    if not re.match(r"^[a-zA-Z0-9_]+$", name):
-        raise ValueError("Player name must contain only alphanumeric and underscores")
-    return name
+def validate_player_id(player_id: str) -> bool:
+    """Validate player ID for gaming automation.
+    Must be 8-16 alphanumeric chars.
+    Args:
+        player_id: The ID to check.
+    Returns:
+        True if valid.
+    """
+    if not isinstance(player_id, str):
+        return False
+    return bool(re.match(r'^[a-zA-Z0-9]{8,16}$', player_id))
 
-def validate_game_mode(mode: Any, allowed: List[str]) -> str:
-    """Validate game mode with type and value edge case handling."""
-    if not isinstance(mode, str):
-        raise ValueError("Game mode must be a string")
-    mode = mode.strip().lower()
-    if not mode:
-        raise ValueError("Game mode cannot be empty")
-    if mode not in [m.lower() for m in allowed]:
-        raise ValueError(f"Invalid game mode. Allowed: {', '.join(allowed)}")
-    return mode
+def validate_score(score: int) -> bool:
+    """Validate game score.
+    Must be int between 0 and 1e6.
+    Args:
+        score: Score value.
+    Returns:
+        True if valid.
+    """
+    if not isinstance(score, int):
+        return False
+    return 0 <= score <= 1000000
 
-def validate_score(score: Any) -> int:
-    """Validate score with conversion error handling and range checks."""
-    try:
-        score = int(score)
-    except (ValueError, TypeError):
-        raise ValueError("Score must be an integer")
-    if score < 0:
-        raise ValueError("Score cannot be negative")
-    if score > 999999:
-        raise ValueError("Score exceeds max limit")
-    return score
+def validate_config(config: Dict[str, Any]) -> bool:
+    """Validate gaming config dict.
+    Requires difficulty, num_players, auto_save with valid values.
+    Args:
+        config: Settings dict.
+    Returns:
+        True if valid.
+    """
+    if not isinstance(config, dict):
+        return False
+    if 'difficulty' not in config or config['difficulty'] not in ['easy', 'medium', 'hard']:
+        return False
+    if 'num_players' not in config or not isinstance(config['num_players'], int) or not 1 <= config['num_players'] <= 4:
+        return False
+    if 'auto_save' not in config or not isinstance(config['auto_save'], bool):
+        return False
+    return True
 
-def validate_player_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate player data with error collection for multiple edge cases."""
+def validate_input_commands(commands: List[str]) -> bool:
+    """Validate game input commands list.
+    Commands from predefined valid set.
+    Args:
+        commands: List of str commands.
+    Returns:
+        True if all valid.
+    """
+    if not isinstance(commands, list):
+        return False
+    valid = {'move_up', 'move_down', 'move_left', 'move_right', 'attack', 'defend', 'special'}
+    return all(isinstance(cmd, str) and cmd in valid for cmd in commands)
+
+def validate_player_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Validate player data dict.
+    Returns cleaned data or None.
+    Args:
+        data: Player info.
+    Returns:
+        Cleaned dict or None.
+    """
     if not isinstance(data, dict):
-        raise ValueError("Player data must be a dictionary")
-    if not data:
-        raise ValueError("Player data cannot be empty")
-    validated: Dict[str, Any] = {}
-    errors: List[str] = []
-    if "name" not in data:
-        errors.append("name is required")
-    else:
-        try:
-            validated["name"] = validate_player_name(data["name"])
-        except ValueError as e:
-            errors.append(str(e))
-    allowed = ["solo", "duo", "squad"]
-    if "mode" not in data:
-        errors.append("mode is required")
-    else:
-        try:
-            validated["mode"] = validate_game_mode(data["mode"], allowed)
-        except ValueError as e:
-            errors.append(str(e))
-    if "score" in data:
-        try:
-            validated["score"] = validate_score(data["score"])
-        except ValueError as e:
-            errors.append(str(e))
-    if errors:
-        raise ValueError("Validation failed: " + "; ".join(errors))
-    return validated
+        return None
+    username = data.get('username', '')
+    if not isinstance(username, str) or len(username) < 3 or len(username) > 20 or not re.match(r'^[a-zA-Z0-9_]+$', username):
+        return None
+    score = data.get('score', 0)
+    if not isinstance(score, int) or score < 0 or score > 1000000:
+        return None
+    level = data.get('level', 1)
+    if not isinstance(level, int) or level < 1 or level > 100:
+        return None
+    return {'username': username, 'score': score, 'level': level}
