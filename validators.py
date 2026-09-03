@@ -1,65 +1,41 @@
 import re
-def validate_player_name(name):
-    """Validate player name for gaming automation."""
-    if not isinstance(name, str):
-        return False
-    if len(name) < 3 or len(name) > 20:
-        return False
-    if not re.match(r'^[a-zA-Z0-9_]+$', name):
-        return False
-    return True
+from typing import Dict, Any, Tuple
 
-def validate_action(action):
-    """Check if action is valid in the game."""
-    valid_actions = ['move', 'attack', 'defend', 'use_item', 'collect']
-    return isinstance(action, str) and action in valid_actions
+class ValidationError(Exception):
+    """Exception raised for errors in the input validation."""
+    pass
 
-def validate_coordinates(x, y):
-    """Validate screen coordinates for game actions."""
-    if not isinstance(x, int) or not isinstance(y, int):
-        return False
-    if x < 0 or x > 1920 or y < 0 or y > 1080:
-        return False
-    return True
-
-def validate_input(data):
-    """Main validation function for input data."""
-    if not isinstance(data, dict):
-        return False, "Input must be a dictionary"
-    if 'player' not in data or not validate_player_name(data['player']):
-        return False, "Invalid player name"
-    if 'action' not in data or not validate_action(data['action']):
-        return False, "Invalid action"
-    if data['action'] == 'move':
-        if 'x' not in data or 'y' not in data or not validate_coordinates(data['x'], data['y']):
-            return False, "Invalid move coordinates"
-    return True, None
-
-def main_processing_loop(input_list):
-    """Main loop that processes and validates game inputs."""
-    results = []
-    for data in input_list:
-        is_valid, error = validate_input(data)
-        if is_valid:
-            # Process the valid input
-            action = data['action']
-            player = data['player']
-            if action == 'move':
-                print(f"Automating move for {player} to ({data['x']}, {data['y']})")
-            else:
-                print(f"Automating {action} for {player}")
-            results.append({"status": "processed", "input": data})
-        else:
-            print(f"Validation failed: {error} for {data}")
-            results.append({"status": "invalid", "input": data, "error": error})
-    return results
-
-if __name__ == "__main__":
-    test_inputs = [
-        {"player": "PlayerOne", "action": "move", "x": 500, "y": 300},
-        {"player": "Bad@Name", "action": "attack"},
-        {"player": "Gamer99", "action": "defend"},
-        {"player": "Hero", "action": "move", "x": 2000, "y": 100}
-    ]
-    processed = main_processing_loop(test_inputs)
-    print("Results:", processed)
+def validate_game_action(payload: Dict[str, Any]) -> Tuple[bool, str]:
+    """
+    Validates gaming action inputs for the automation loop.
+    Ensures coordinates are within screen boundaries and actions are allowed.
+    """
+    allowed_actions = {"click", "keypress", "drag", "wait"}
+    
+    action = payload.get("action")
+    if not action or action not in allowed_actions:
+        return False, f"Invalid action: {action}. Must be one of {allowed_actions}"
+        
+    if action in ("click", "drag"):
+        coords = payload.get("coords")
+        if not isinstance(coords, (list, tuple)) or len(coords) != 2:
+            return False, "Coordinates must be a list or tuple of (x, y)"
+        x, y = coords
+        if not (isinstance(x, int) and isinstance(y, int)):
+            return False, "Coordinates must be integers"
+        if x < 0 or y < 0 or x > 1920 or y > 1080:
+            return False, "Coordinates out of bounds (0-1920, 0-1080)"
+            
+    if action == "keypress":
+        key = payload.get("key")
+        if not isinstance(key, str) or len(key) == 0:
+            return False, "Key must be a non-empty string"
+        if not re.match(r"^[a-zA-Z0-9_]+$", key):
+            return False, "Invalid key format"
+            
+    if action == "wait":
+        duration = payload.get("duration")
+        if not isinstance(duration, (int, float)) or duration <= 0:
+            return False, "Wait duration must be a positive number"
+            
+    return True, "Valid action"
