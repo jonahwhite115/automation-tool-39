@@ -1,32 +1,30 @@
-import os
+from typing import Final
 
-# Constants for game settings
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-FPS = 60
+# Network and connection constants
+DEFAULT_TIMEOUT: Final[int] = 30
+MAX_RETRIES: Final[int] = 3
 
-# Colors in RGB format
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
+# Game interaction settings
+CLICK_DELAY: Final[float] = 0.5
+FRAME_RATE_LIMIT: Final[int] = 60
 
-# File paths
-ASSETS_DIR = os.path.join('assets')
-IMAGES_DIR = os.path.join(ASSETS_DIR, 'images')
-SOUNDS_DIR = os.path.join(ASSETS_DIR, 'sounds')
+# Asset directories and paths
+ASSET_DIR: Final[str] = "./assets"
+LOG_DIR: Final[str] = "./logs"
+CONFIG_FILE: Final[str] = "settings.yaml"
 
-# Game states
-MENU = 'menu'
-PLAYING = 'playing'
-PAUSED = 'paused'
-GAME_OVER = 'game_over'
+# Supported game states
+STATE_IDLE: Final[str] = "idle"
+STATE_RUNNING: Final[str] = "running"
+STATE_ERROR: Final[str] = "error"
 
-# Default settings
-DEFAULT_VOLUME = 0.5
-DEFAULT_DIFFICULTY = 'normal'
+def get_timeout_multiplier(base_delay: float) -> float:
+    """Calculates timeout based on provided base delay multiplier."""
+    return float(base_delay * DEFAULT_TIMEOUT)
 
-# Other game constant values
-MAX_SCORE = 1000
-PLAYER_LIVES = 3
+# Valid screen resolutions
+SCREEN_RESOLUTIONS: Final[list[tuple[int, int]]] = [
+    (1920, 1080),
+    (2560, 1440),
+    (3840, 2160)
+]
