@@ -1,37 +1,32 @@
 import random
-import string
+import time
+from typing import Tuple
 
-class GameHelper:
-    @staticmethod
-    def generate_random_string(length=10):
-        """Generate a random string of fixed length."""
-        letters = string.ascii_letters
-        return ''.join(random.choice(letters) for i in range(length))
 
-    @staticmethod
-    def get_user_input(prompt):
-        """Get input from the user with a prompt."""
-        return input(prompt)
+def human_delay(min_seconds: float = 0.2, max_seconds: float = 1.5) -> None:
+    """Delays execution by a random amount of time to mimic human behavior."""
+    delay = random.uniform(min_seconds, max_seconds)
+    time.sleep(delay)
 
-    @staticmethod
-    def display_message(message):
-        """Display a message to the user."""
-        print(message)
 
-    @staticmethod
-    def validate_choice(choice, valid_choices):
-        """Validate if the user choice is within valid options."""
-        return choice in valid_choices
+def jitter_coordinate(
+    x: int, y: int, max_offset: int = 5
+) -> Tuple[int, int]:
+    """Adds a small random offset to coordinates to simulate imperfect human clicks."""
+    dx = random.randint(-max_offset, max_offset)
+    dy = random.randint(-max_offset, max_offset)
+    return x + dx, y + dy
 
-    @staticmethod
-    def clear_console():
-        """Clear the console screen for better readability."""
-        import os
-        os.system('cls' if os.name == 'nt' else 'clear')
 
-# Example Usage in a game
-if __name__ == '__main__':
-    GameHelper.clear_console()
-    name = GameHelper.get_user_input('Enter your name: ')
-    GameHelper.display_message(f'Welcome to the game, {name}!')
-    GameHelper.display_message('Your random code is: ' + GameHelper.generate_random_string(8))
+def clamp_coordinates(
+    x: int, y: int, screen_width: int, screen_height: int
+) -> Tuple[int, int]:
+    """Ensures targeted coordinates fall within the boundaries of the game screen."""
+    clamped_x = max(0, min(x, screen_width - 1))
+    clamped_y = max(0, min(y, screen_height - 1))
+    return clamped_x, clamped_y
+
+
+def calculate_distance(p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
+    """Calculates the Euclidean distance between two screen coordinates."""
+    return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
