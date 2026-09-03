@@ -1,41 +1,54 @@
-import re
-from typing import Dict, Any, Tuple
+"""Validation utilities for gaming automation inputs and game state parameters."""
 
-class ValidationError(Exception):
-    """Exception raised for errors in the input validation."""
-    pass
+from typing import Tuple, Union
 
-def validate_game_action(payload: Dict[str, Any]) -> Tuple[bool, str]:
+
+def validate_coordinates(coords: Tuple[int, int], max_bounds: Tuple[int, int]) -> bool:
+    """Validate if screen coordinates fall within acceptable screen dimensions.
+
+    Args:
+        coords: A tuple of (x, y) pixel coordinates.
+        max_bounds: A tuple of (max_width, max_height) screen resolution.
+
+    Returns:
+        True if coordinates are non-negative and within bounds, False otherwise.
     """
-    Validates gaming action inputs for the automation loop.
-    Ensures coordinates are within screen boundaries and actions are allowed.
+    x, y = coords
+    max_x, max_y = max_bounds
+    return 0 <= x < max_x and 0 <= y < max_y
+
+
+def validate_health_percentage(hp: Union[int, float]) -> float:
+    """Ensure health percentage value is clamped between 0.0 and 100.0.
+
+    Args:
+        hp: The raw health percentage value to validate.
+
+    Returns:
+        A float value strictly between 0.0 and 100.0.
+
+    Raises:
+        TypeError: If hp is not a numeric type.
+        ValueError: If hp is less than zero.
     """
-    allowed_actions = {"click", "keypress", "drag", "wait"}
+    if not isinstance(hp, (int, float)):
+        raise TypeError("Health value must be a numeric type.")
     
-    action = payload.get("action")
-    if not action or action not in allowed_actions:
-        return False, f"Invalid action: {action}. Must be one of {allowed_actions}"
-        
-    if action in ("click", "drag"):
-        coords = payload.get("coords")
-        if not isinstance(coords, (list, tuple)) or len(coords) != 2:
-            return False, "Coordinates must be a list or tuple of (x, y)"
-        x, y = coords
-        if not (isinstance(x, int) and isinstance(y, int)):
-            return False, "Coordinates must be integers"
-        if x < 0 or y < 0 or x > 1920 or y > 1080:
-            return False, "Coordinates out of bounds (0-1920, 0-1080)"
-            
-    if action == "keypress":
-        key = payload.get("key")
-        if not isinstance(key, str) or len(key) == 0:
-            return False, "Key must be a non-empty string"
-        if not re.match(r"^[a-zA-Z0-9_]+$", key):
-            return False, "Invalid key format"
-            
-    if action == "wait":
-        duration = payload.get("duration")
-        if not isinstance(duration, (int, float)) or duration <= 0:
-            return False, "Wait duration must be a positive number"
-            
-    return True, "Valid action"
+    val = float(hp)
+    if val < 0.0:
+        raise ValueError("Health percentage cannot be negative.")
+    
+    return min(100.0, max(0.0, val))
+
+
+def validate_inventory_slot(slot_index: int, total_slots: int = 36) -> bool:
+    """Check if an inventory slot index is valid for the current grid size.
+
+    Args:
+        slot_index: Zero-based inventory slot index.
+        total_slots: Maximum available slots in inventory (default 36).
+
+    Returns:
+        True if slot_index is valid, False otherwise.
+    """
+    return 0 <= slot_index < total_slots
