@@ -1,32 +1,62 @@
-from typing import List, Dict
+import logging
+from typing import Dict, Any, List
 
-class GameProcessor:
-    """ A class to process game data for analysis and reporting. """
+logger = logging.getLogger(__name__)
 
-    def __init__(self, game_data: List[Dict]) -> None:
-        """ Initializes the GameProcessor with game data. """
-        self.game_data = game_data
 
-    def filter_by_score(self, min_score: int) -> List[Dict]:
-        """ Filters the game data by a minimum score. """ 
-        return [game for game in self.game_data if game.get('score', 0) >= min_score]
+class ValidationError(Exception):
+    """Raised when input action payload fails validation rules."""
+    pass
 
-    def get_average_score(self) -> float:
-        """ Calculates the average score of the games. """ 
-        total_score = sum(game.get('score', 0) for game in self.game_data)
-        return total_score / len(self.game_data) if self.game_data else 0.0
 
-    def top_n_games(self, n: int) -> List[Dict]:
-        """ Retrieves the top N games based on score. """ 
-        return sorted(self.game_data, key=lambda x: x.get('score', 0), reverse=True)[:n]
+def validate_action_payload(payload: Dict[str, Any]) -> bool:
+    """Validate game action payload structure and coordinate values."""
+    if not isinstance(payload, dict):
+        raise ValidationError("Payload must be a dictionary.")
 
-# Example usage
-if __name__ == '__main__':
-    games = [
-        {'name': 'Game A', 'score': 85},
-        {'name': 'Game B', 'score': 92},
-        {'name': 'Game C', 'score': 75},
-    ]
-    processor = GameProcessor(games)
-    print(processor.get_average_score())  # Outputs average score
-    print(processor.top_n_games(2))       # Outputs top 2 games
+    action_type = payload.get("action_type")
+    if not action_type or not isinstance(action_type, str):
+        raise ValidationError("Invalid or missing 'action_type'.")
+
+    valid_actions = {"click", "keypress", "drag", "wait"}
+    if action_type not in valid_actions:
+        raise ValidationError(f"Unsupported action_type: '{action_type}'.")
+
+    if action_type in ("click", "drag"):
+        coords = payload.get("coordinates")
+        if not isinstance(coords, (tuple, list)) or len(coords) != 2:
+            raise ValidationError("Coordinates must be a (x, y) tuple or list.")
+        x, y = coords
+        if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+            raise ValidationError("Coordinates (x, y) must be numeric.")
+        if x < 0 or y < 0:
+            raise ValidationError("Coordinates cannot be negative.")
+
+    if action_type == "wait":
+        duration = payload.get("duration", 0)
+        if not isinstance(duration, (int, float)) or duration <= 0:
+            raise ValidationError("Wait duration must be a positive number.")
+
+    return True
+
+
+def process_action_queue(action_queue: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Main processing loop with robust input validation for game commands."""
+    processed_results = []
+
+    for index, item in enumerate(action_queue):
+        try:
+            validate_action_payload(item)
+            logger.info(f"Executing action #{index + 1}: {item['action_type']}")
+            
+            result = item.copy()
+            result["status"] = "executed"
+            processed_results.append(result)
+        except ValidationError as err:
+            logger.warning(f"Skipping invalid task at index {index}: {err}")
+            failed_item = item if isinstance(item, dict) else {"raw": item}
+            failed_item["status"] = "rejected"
+            failed_item["error"] = str(err)
+            processed_results.append(failed_item)
+
+    return processed_results
