@@ -1,47 +1,51 @@
-import logging
-from logging.handlers import RotatingFileHandler
+import json
 import os
+from typing import Any, Dict
 
-LOG_FILE = 'automation_tool.log'
-MAX_LOG_SIZE = 5 * 1024 * 1024  # 5 MB
-BACKUP_COUNT = 3
-LOG_LEVEL = logging.INFO
+DEFAULT_CONFIG: Dict[str, Any] = {
+    "target_fps": 60,
+    "action_delay_ms": 100,
+    "hotkeys": {
+        "start": "f10",
+        "stop": "f11",
+        "pause": "f12"
+    },
+    "game_window_title": "GameWindow",
+    "debug_mode": False,
+    "capture_region": [0, 0, 1920, 1080]
+}
 
-def setup_logging():
-    """Set up logger with rotation for the gaming automation tool."""
-    logger = logging.getLogger('automation-tool-39')
-    if logger.hasHandlers():
-        logger.handlers.clear()
-    logger.setLevel(LOG_LEVEL)
+def load_config(config_path: str = "config.json") -> Dict[str, Any]:
+    """
+    Loads configuration from a JSON file and merges it with default gaming settings.
 
-    log_dir = 'logs'
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    Args:
+        config_path: Path to the configuration file.
 
-    log_path = os.path.join(log_dir, LOG_FILE)
+    Returns:
+        A dictionary containing the merged configuration.
+    """
+    config = DEFAULT_CONFIG.copy()
 
-    file_handler = RotatingFileHandler(
-        log_path, maxBytes=MAX_LOG_SIZE, backupCount=BACKUP_COUNT
-    )
-    file_handler.setLevel(LOG_LEVEL)
+    if not os.path.exists(config_path):
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4)
+        except IOError:
+            pass
+        return config
 
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(LOG_LEVEL)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            user_config = json.load(f)
+            # Deep merge nested hotkeys dictionary
+            if "hotkeys" in user_config and isinstance(user_config["hotkeys"], dict):
+                config["hotkeys"].update(user_config["hotkeys"])
+                del user_config["hotkeys"]
 
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+            config.update(user_config)
+    except (json.JSONDecodeError, KeyError, IOError):
+        # Fallback to default values if loading fails
+        pass
 
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-
-    logger.info('Logger setup complete with rotation enabled')
-    return logger
-
-if __name__ == '__main__':
-    logger = setup_logging()
-    logger.info('Testing the logger')
-    logger.warning('This is a test warning')
+    return config
