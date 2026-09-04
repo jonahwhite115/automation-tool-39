@@ -1,32 +1,38 @@
-import random
+import logging
 import time
-from typing import Tuple
+from typing import Callable, Any, Optional
 
+logger = logging.getLogger(__name__)
 
-def human_delay(min_seconds: float = 0.2, max_seconds: float = 1.5) -> None:
-    """Delays execution by a random amount of time to mimic human behavior."""
-    delay = random.uniform(min_seconds, max_seconds)
-    time.sleep(delay)
+def retry_operation(func: Callable, retries: int = 3, delay: float = 1.0) -> Optional[Any]:
+    """Executes a game function with simple retry logic for transient failures."""
+    last_exception = None
+    
+    for attempt in range(retries):
+        try:
+            return func()
+        except (ConnectionError, TimeoutError) as e:
+            last_exception = e
+            logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
+            time.sleep(delay)
+        except Exception as e:
+            logger.error(f"Critical failure in {func.__name__}: {e}")
+            break
+            
+    logger.error(f"Operation failed after {retries} attempts. Last error: {last_exception}")
+    return None
 
-
-def jitter_coordinate(
-    x: int, y: int, max_offset: int = 5
-) -> Tuple[int, int]:
-    """Adds a small random offset to coordinates to simulate imperfect human clicks."""
-    dx = random.randint(-max_offset, max_offset)
-    dy = random.randint(-max_offset, max_offset)
-    return x + dx, y + dy
-
-
-def clamp_coordinates(
-    x: int, y: int, screen_width: int, screen_height: int
-) -> Tuple[int, int]:
-    """Ensures targeted coordinates fall within the boundaries of the game screen."""
-    clamped_x = max(0, min(x, screen_width - 1))
-    clamped_y = max(0, min(y, screen_height - 1))
-    return clamped_x, clamped_y
-
-
-def calculate_distance(p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
-    """Calculates the Euclidean distance between two screen coordinates."""
-    return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
+def validate_game_config(config: dict) -> bool:
+    """Checks configuration keys for invalid or empty values."""
+    required_keys = ['api_key', 'server_region', 'refresh_rate']
+    try:
+        for key in required_keys:
+            if key not in config or not config[key]:
+                raise ValueError(f"Missing required configuration key: {key}")
+        return True
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return False
+    except TypeError:
+        logger.error("Invalid config format provided")
+        return False
