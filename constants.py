@@ -1,30 +1,38 @@
-from typing import Final
+import os
 
-# Network and connection constants
-DEFAULT_TIMEOUT: Final[int] = 30
-MAX_RETRIES: Final[int] = 3
+# Configuration constants for automation-tool-39
+# Defines system boundaries and validation rules
 
-# Game interaction settings
-CLICK_DELAY: Final[float] = 0.5
-FRAME_RATE_LIMIT: Final[int] = 60
+MAX_RETRY_ATTEMPTS = 5
+TIMEOUT_SECONDS = 30.0
 
-# Asset directories and paths
-ASSET_DIR: Final[str] = "./assets"
-LOG_DIR: Final[str] = "./logs"
-CONFIG_FILE: Final[str] = "settings.yaml"
+# Supported gaming platforms for automation tasks
+SUPPORTED_PLATFORMS = {
+    "steam",
+    "epic",
+    "gog",
+    "origin"
+}
 
-# Supported game states
-STATE_IDLE: Final[str] = "idle"
-STATE_RUNNING: Final[str] = "running"
-STATE_ERROR: Final[str] = "error"
+# Validation ranges for input automation scripts
+MIN_DELAY_MS = 100
+MAX_DELAY_MS = 5000
 
-def get_timeout_multiplier(base_delay: float) -> float:
-    """Calculates timeout based on provided base delay multiplier."""
-    return float(base_delay * DEFAULT_TIMEOUT)
+# Environment path defaults with fallback logic
+BASE_PATH = os.getenv("AUTO_TOOL_PATH", "./data")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
-# Valid screen resolutions
-SCREEN_RESOLUTIONS: Final[list[tuple[int, int]]] = [
-    (1920, 1080),
-    (2560, 1440),
-    (3840, 2160)
-]
+# Error message constants for consistent exception reporting
+ERR_INVALID_PLATFORM = "Target platform not supported for automation."
+ERR_TIMEOUT_REACHED = "Operation timed out after maximum retry attempts."
+ERR_PATH_NOT_FOUND = "Configuration or data path could not be resolved."
+
+class ConstantsError(Exception):
+    """Custom base exception for constant configuration errors."""
+    pass
+
+def get_validated_delay(delay: int) -> int:
+    """Ensures delay falls within operational safety bounds."""
+    if not isinstance(delay, int):
+        raise ConstantsError("Delay must be an integer.")
+    return max(MIN_DELAY_MS, min(delay, MAX_DELAY_MS))
