@@ -2,50 +2,34 @@ import json
 import os
 from typing import Any, Dict
 
-DEFAULT_CONFIG: Dict[str, Any] = {
-    "target_fps": 60,
-    "action_delay_ms": 100,
-    "hotkeys": {
-        "start": "f10",
-        "stop": "f11",
-        "pause": "f12"
-    },
-    "game_window_title": "GameWindow",
-    "debug_mode": False,
-    "capture_region": [0, 0, 1920, 1080]
+DEFAULT_CONFIG = {
+    "window_width": 1920,
+    "window_height": 1080,
+    "fps_limit": 60,
+    "enable_logging": True,
+    "auto_save_path": "./saves"
 }
 
-def load_config(config_path: str = "config.json") -> Dict[str, Any]:
-    """
-    Loads configuration from a JSON file and merges it with default gaming settings.
+class ConfigLoader:
+    """Handles loading and merging of game configuration files."""
 
-    Args:
-        config_path: Path to the configuration file.
+    def __init__(self, config_path: str = "config.json"):
+        self.config_path = config_path
 
-    Returns:
-        A dictionary containing the merged configuration.
-    """
-    config = DEFAULT_CONFIG.copy()
+    def load(self) -> Dict[str, Any]:
+        """Loads config from disk or returns defaults if missing."""
+        if not os.path.exists(self.config_path):
+            return DEFAULT_CONFIG.copy()
 
-    if not os.path.exists(config_path):
         try:
-            with open(config_path, "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=4)
-        except IOError:
-            pass
-        return config
+            with open(self.config_path, "r") as f:
+                user_config = json.load(f)
+                # Deep merge defaults with user overrides
+                return {**DEFAULT_CONFIG, **user_config}
+        except (json.JSONDecodeError, IOError):
+            return DEFAULT_CONFIG.copy()
 
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            user_config = json.load(f)
-            # Deep merge nested hotkeys dictionary
-            if "hotkeys" in user_config and isinstance(user_config["hotkeys"], dict):
-                config["hotkeys"].update(user_config["hotkeys"])
-                del user_config["hotkeys"]
-
-            config.update(user_config)
-    except (json.JSONDecodeError, KeyError, IOError):
-        # Fallback to default values if loading fails
-        pass
-
-    return config
+    def save(self, config_data: Dict[str, Any]) -> None:
+        """Persists current configuration to file."""
+        with open(self.config_path, "w") as f:
+            json.dump(config_data, f, indent=4)
