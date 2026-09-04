@@ -1,32 +1,30 @@
-import logging
-from typing import List, Dict, Any
+import json
+from typing import Dict, Any, List
 
-logger = logging.getLogger(__name__)
+def normalize_game_stats(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Sanitizes and normalizes raw gaming session telemetry."""
+    processed = {
+        "player_id": str(data.get("uid", "unknown")),
+        "score": int(data.get("score", 0)),
+        "latency_ms": float(data.get("ping", 0.0)),
+        "is_active": bool(data.get("status") == "online")
+    }
+    return processed
 
-class GameStateProcessor:
-    def __init__(self, data_stream: List[Dict[str, Any]]):
-        self.data_stream = data_stream
+def batch_process_stats(raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Processes list of telemetry logs into valid schema."""
+    results = []
+    for entry in raw_data:
+        try:
+            results.append(normalize_game_stats(entry))
+        except (ValueError, TypeError):
+            continue
+    return results
 
-    def sanitize_input(self) -> List[Dict[str, Any]]:
-        """Removes invalid or empty gaming event packets."""
-        return [item for item in self.data_stream if item and 'event_id' in item]
+def serialize_to_json(data: Any, indent: int = 4) -> str:
+    """Converts telemetry dictionaries to JSON strings."""
+    return json.dumps(data, indent=indent)
 
-    def process_events(self) -> List[str]:
-        """Normalizes and categorizes raw game events."""
-        sanitized = self.sanitize_input()
-        processed_results = []
-
-        for event in sanitized:
-            try:
-                event_type = event.get('type', 'unknown')
-                event_id = event['event_id']
-                processed_results.append(f"{event_type}_{event_id}")
-            except KeyError as e:
-                logger.error(f"failed to parse event structure: {e}")
-
-        return processed_results
-
-    def run_cleanup(self):
-        """Clears memory buffer after batch processing."""
-        self.data_stream.clear()
-        logger.info("buffer cleared successfully")
+if __name__ == "__main__":
+    sample = [{"uid": "p123", "score": 1500, "ping": 24.5, "status": "online"}]
+    print(serialize_to_json(batch_process_stats(sample)))
