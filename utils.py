@@ -1,28 +1,42 @@
 import time
 import random
-import pyautogui
+import logging
+from functools import wraps
+from typing import Callable, Any, Type, Tuple
 
-def sleep_random(min_sec: float = 0.5, max_sec: float = 2.0):
-    """Wait for a randomized duration to simulate human-like behavior."""
-    delay = random.uniform(min_sec, max_sec)
-    time.sleep(delay)
+logger = logging.getLogger("automation_tool.utils")
 
-def click_at(x: int, y: int, confidence: float = 0.9):
-    """Perform a mouse click at specific coordinates with delay."""
-    pyautogui.click(x, y)
-    sleep_random()
-
-def get_screen_center():
-    """Calculate center of primary display."""
-    width, height = pyautogui.size()
-    return width // 2, height // 2
-
-def verify_pixel_color(x: int, y: int, target_rgb: tuple, tolerance: int = 10):
-    """Check if pixel color matches target within a threshold."""
-    pixel = pyautogui.pixel(x, y)
-    return all(abs(p - t) <= tolerance for p, t in zip(pixel, target_rgb))
-
-def log_event(message: str):
-    """Simple console output wrapper for automation status."""
-    timestamp = time.strftime("%H:%M:%S")
-    print(f"[{timestamp}] [automation-tool-39]: {message}")
+def retry_on_failure(
+    retries: int = 3,
+    delay: float = 1.0,
+    backoff: float = 2.0,
+    exceptions: Tuple[Type[BaseException], ...] = (Exception,),
+) -> Callable:
+    """
+    Decorator to retry a function call with exponential backoff and jitter.
+    
+    Useful for resilient network operations in gaming automation.
+    """
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            current_delay = delay
+            for attempt in range(1, retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    if attempt == retries:
+                        logger.error(f"Failed {func.__name__} after {retries} attempts: {e}")
+                        raise
+                    
+                    # Apply exponential backoff with a random jitter
+                    jitter = random.uniform(0.5, 1.5)
+                    sleep_time = current_delay * jitter
+                    logger.warning(
+                        f"Retrying {func.__name__} in {sleep_time:.2f}s "
+                        f"(Attempt {attempt}/{retries}) due to error: {e}"
+                    )
+                    time.sleep(sleep_time)
+                    current_delay *= backoff
+        return wrapper
+    return decorator
