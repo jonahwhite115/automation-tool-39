@@ -2,34 +2,32 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 
-def setup_logger(name: str, log_file: str = 'automation.log') -> logging.Logger:
-    """Configures a rotating file logger for gaming automation tasks."""
+def setup_logger(name='automation-tool-39', log_file='game_automation.log', level=logging.INFO):
+    """Initializes a rotating file logger for the automation tool."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(level)
 
-    # Prevent duplicate handlers if logger is re-initialized
+    # Prevent duplicate handlers if called multiple times
     if not logger.handlers:
-        # Ensure log directory exists
-        log_dir = os.path.dirname(log_file)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
 
-        # Rotation: 5MB per file, keep 3 backups
-        handler = RotatingFileHandler(
+        # Rotate logs at 5MB, keep 3 backups
+        file_handler = RotatingFileHandler(
             log_file, 
             maxBytes=5 * 1024 * 1024, 
             backupCount=3
         )
-        
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-        # Add console output for debugging
-        console = logging.StreamHandler()
-        console.setFormatter(formatter)
-        logger.addHandler(console)
+        # Optional stream handler for console output
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
     return logger
+
+# Instantiate default project logger
+logger = setup_logger()
