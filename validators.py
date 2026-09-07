@@ -1,31 +1,34 @@
+import time
+import functools
 import logging
 
 logger = logging.getLogger(__name__)
 
-def validate_game_input(user_input: str) -> bool:
-    """Validates player commands for the automation tool."""
-    if not user_input or not isinstance(user_input, str):
-        logger.error("invalid input type received")
-        return False
-    
-    clean_input = user_input.strip().lower()
-    allowed_commands = {'start', 'stop', 'pause', 'resume', 'status'}
-    
-    if clean_input not in allowed_commands:
-        logger.warning(f"unknown command: {clean_input}")
-        return False
-    
-    return True
+def retry_network_op(retries=3, delay=2, backoff=2):
+    """Decorator for retrying network operations with exponential backoff."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            for attempt in range(retries):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError) as e:
+                    if attempt == retries - 1:
+                        logger.error(f"Final attempt failed for {func.__name__}: {e}")
+                        raise
+                    
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {current_delay}s...")
+                    time.sleep(current_delay)
+                    current_delay *= backoff
+            return None
+        return wrapper
+    return decorator
 
-def validate_coordinate_range(x: int, y: int, bounds: dict) -> bool:
-    """Checks if coordinates fall within the game window."""
-    try:
-        within_x = bounds['min_x'] <= x <= bounds['max_x']
-        within_y = bounds['min_y'] <= y <= bounds['max_y']
-        return within_x and within_y
-    except KeyError as e:
-        logger.error(f"missing bound parameter: {e}")
-        return False
-    except TypeError:
-        logger.error("non-numeric coordinate check attempted")
-        return False
+@retry_network_op(retries=3, delay=1)
+def validate_game_connection(endpoint: str) -> bool:
+    """Example network operation for automation-tool-39."""
+    # Simulating actual network call validation logic
+    if not endpoint.startswith("http"):
+        raise ConnectionError("Invalid endpoint protocol")
+    return True
