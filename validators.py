@@ -1,40 +1,31 @@
-from typing import Dict, Any, Optional
+import logging
 
-def validate_game_state(state: Dict[str, Any]) -> bool:
-    """verify integrity of game state dictionaries."""
-    required_keys = {'player_id', 'level', 'xp', 'inventory'}
+logger = logging.getLogger(__name__)
+
+def validate_game_input(user_input: str) -> bool:
+    """Validates player commands for the automation tool."""
+    if not user_input or not isinstance(user_input, str):
+        logger.error("invalid input type received")
+        return False
     
-    if not isinstance(state, dict):
+    clean_input = user_input.strip().lower()
+    allowed_commands = {'start', 'stop', 'pause', 'resume', 'status'}
+    
+    if clean_input not in allowed_commands:
+        logger.warning(f"unknown command: {clean_input}")
         return False
-        
-    if not all(key in state for key in required_keys):
-        return False
-        
-    if not isinstance(state.get('xp'), (int, float)) or state['xp'] < 0:
-        return False
-        
+    
     return True
 
-def sanitize_player_input(input_str: str, max_len: int = 32) -> str:
-    """clean and truncate user-provided string inputs."""
-    if not isinstance(input_str, str):
-        return ""
-    
-    # strip non-alphanumeric chars and enforce length
-    clean = ''.join(c for c in input_str if c.isalnum())
-    return clean[:max_len]
-
-def calculate_level_threshold(xp: int) -> int:
-    """determine player level based on accumulated xp."""
-    if xp < 0:
-        return 0
-    return (xp // 1000) + 1
-
-def validate_inventory_item(item: Dict[str, Any]) -> bool:
-    """ensure item object contains valid properties."""
-    return (
-        isinstance(item, dict) and 
-        'id' in item and 
-        'quantity' in item and 
-        item['quantity'] > 0
-    )
+def validate_coordinate_range(x: int, y: int, bounds: dict) -> bool:
+    """Checks if coordinates fall within the game window."""
+    try:
+        within_x = bounds['min_x'] <= x <= bounds['max_x']
+        within_y = bounds['min_y'] <= y <= bounds['max_y']
+        return within_x and within_y
+    except KeyError as e:
+        logger.error(f"missing bound parameter: {e}")
+        return False
+    except TypeError:
+        logger.error("non-numeric coordinate check attempted")
+        return False
