@@ -1,42 +1,33 @@
-import time
-import random
+import os
 import logging
-from functools import wraps
-from typing import Callable, Any, Type, Tuple
+from pathlib import Path
+from typing import List
 
-logger = logging.getLogger("automation_tool.utils")
+# Configure standard logger for automation tasks
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('automation-tool-39')
 
-def retry_on_failure(
-    retries: int = 3,
-    delay: float = 1.0,
-    backoff: float = 2.0,
-    exceptions: Tuple[Type[BaseException], ...] = (Exception,),
-) -> Callable:
-    """
-    Decorator to retry a function call with exponential backoff and jitter.
+def get_game_files(directory: str, extension: str = '.sav') -> List[Path]:
+    """Retrieve list of game save files from specified directory."""
+    path = Path(directory)
+    if not path.exists():
+        logger.error(f"Directory {directory} does not exist")
+        return []
+    return list(path.glob(f'*{extension}'))
+
+def cleanup_old_backups(directory: str, max_files: int = 5) -> None:
+    """Maintain limited count of backups to conserve storage."""
+    files = sorted(
+        [f for f in Path(directory).iterdir() if f.is_file()],
+        key=os.path.getmtime
+    )
     
-    Useful for resilient network operations in gaming automation.
-    """
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            current_delay = delay
-            for attempt in range(1, retries + 1):
-                try:
-                    return func(*args, **kwargs)
-                except exceptions as e:
-                    if attempt == retries:
-                        logger.error(f"Failed {func.__name__} after {retries} attempts: {e}")
-                        raise
-                    
-                    # Apply exponential backoff with a random jitter
-                    jitter = random.uniform(0.5, 1.5)
-                    sleep_time = current_delay * jitter
-                    logger.warning(
-                        f"Retrying {func.__name__} in {sleep_time:.2f}s "
-                        f"(Attempt {attempt}/{retries}) due to error: {e}"
-                    )
-                    time.sleep(sleep_time)
-                    current_delay *= backoff
-        return wrapper
-    return decorator
+    if len(files) > max_files:
+        to_delete = files[:-max_files]
+        for file in to_delete:
+            file.unlink()
+            logger.info(f"Removed stale backup: {file.name}")
+
+def validate_path(path: str) -> bool:
+    """Ensure provided path is a directory for automation."""
+    return Path(path).is_dir()
