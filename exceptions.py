@@ -1,71 +1,48 @@
-"""Custom exceptions and utilities for gaming data handling in automation-tool-39."""
+"""Custom exceptions for gaming data handling and automation pipeline."""
+
+from typing import Any, Dict, Optional
+
 
 class GamingDataError(Exception):
-    """Base exception for all gaming data errors."""
-    pass
+    """Base exception for all gaming data processing errors."""
 
-class InvalidGameDataError(GamingDataError):
-    """Raised when provided gaming data is invalid."""
-    def __init__(self, message, data_key=None):
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(message)
-        self.data_key = data_key
+        self.message = message
+        self.details = details or {}
 
-class PlayerNotFoundError(GamingDataError):
-    """Raised when a player cannot be found in the data."""
-    def __init__(self, player_id, message=None):
-        if message is None:
-            message = "Player data not found"
-        super().__init__(f"{message} for ID: {player_id}")
-        self.player_id = player_id
+    def __str__(self) -> str:
+        if self.details:
+            return f"{self.message} | Context: {self.details}"
+        return self.message
 
-class CorruptedSaveDataError(GamingDataError):
-    """Raised for corrupted or unreadable save game data."""
-    def __init__(self, message, file_path=None):
-        super().__init__(message)
-        self.file_path = file_path
 
-class InvalidInventoryError(GamingDataError):
-    """Raised for invalid player inventory data."""
-    pass
+class TelemetryParsingError(GamingDataError):
+    """Raised when raw game telemetry payload cannot be parsed."""
 
-class AchievementDataError(GamingDataError):
-    """Raised for issues with achievement data."""
-    def __init__(self, message, achievement_id=None):
-        super().__init__(message)
-        self.achievement_id = achievement_id
+    def __init__(self, raw_payload: str, reason: str) -> None:
+        message = f"Failed to parse telemetry data: {reason}"
+        details = {"payload_sample": raw_payload[:100]}
+        super().__init__(message, details)
 
-class ScoreCalculationError(GamingDataError):
-    """Raised when calculating scores from game data fails."""
-    pass
 
-def validate_gaming_data(data):
-    """Validate gaming data dictionary for required fields.
-    Practical validation for player stats, inventory etc.
-    """
-    if not isinstance(data, dict):
-        raise InvalidGameDataError("Gaming data must be a dictionary")
-    if "player_id" not in data:
-        raise PlayerNotFoundError(data.get("player_id", "unknown"))
-    if "inventory" in data and not isinstance(data["inventory"], list):
-        raise InvalidInventoryError("Inventory must be a list")
-    if "score" in data and not isinstance(data["score"], (int, float)):
-        raise ScoreCalculationError("Score must be numeric")
-    return True
+class InvalidPlayerDataError(GamingDataError):
+    """Raised when player profile or inventory stats fail validation."""
 
-def get_error_details(error):
-    """Extract details from a gaming exception for reporting.
-    Returns a dict with error info, useful in automation logs.
-    """
-    details = {
-        "error_type": type(error).__name__,
-        "message": str(error),
-    }
-    if isinstance(error, PlayerNotFoundError):
-        details["player_id"] = error.player_id
-    elif isinstance(error, InvalidGameDataError) and error.data_key:
-        details["data_key"] = error.data_key
-    elif isinstance(error, CorruptedSaveDataError) and error.file_path:
-        details["file_path"] = error.file_path
-    elif isinstance(error, AchievementDataError) and error.achievement_id:
-        details["achievement_id"] = error.achievement_id
-    return details
+    def __init__(self, player_id: str, field_name: str, expected_type: str) -> None:
+        message = f"Invalid player data attribute '{field_name}'"
+        details = {
+            "player_id": player_id,
+            "field": field_name,
+            "expected_type": expected_type,
+        }
+        super().__init__(message, details)
+
+
+class MatchDataNotFoundError(GamingDataError):
+    """Raised when requested match or lobby ID is missing from API data."""
+
+    def __init__(self, match_id: str) -> None:
+        message = f"Match record for ID '{match_id}' not found"
+        details = {"match_id": match_id}
+        super().__init__(message, details)
