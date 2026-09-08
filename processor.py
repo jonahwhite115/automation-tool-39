@@ -1,30 +1,33 @@
-import json
-from typing import Dict, Any, List
+import logging
+from typing import List, Dict
 
-def normalize_game_stats(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Sanitizes and normalizes raw gaming session telemetry."""
-    processed = {
-        "player_id": str(data.get("uid", "unknown")),
-        "score": int(data.get("score", 0)),
-        "latency_ms": float(data.get("ping", 0.0)),
-        "is_active": bool(data.get("status") == "online")
-    }
-    return processed
+class GameDataProcessor:
+    """Handles raw game telemetry data cleanup and normalization."""
 
-def batch_process_stats(raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Processes list of telemetry logs into valid schema."""
-    results = []
-    for entry in raw_data:
-        try:
-            results.append(normalize_game_stats(entry))
-        except (ValueError, TypeError):
-            continue
-    return results
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
 
-def serialize_to_json(data: Any, indent: int = 4) -> str:
-    """Converts telemetry dictionaries to JSON strings."""
-    return json.dumps(data, indent=indent)
+    def sanitize_stats(self, raw_data: List[Dict]) -> List[Dict]:
+        """Filters invalid entries and ensures score consistency."""
+        cleaned = []
+        for entry in raw_data:
+            if self._is_valid(entry):
+                entry['score'] = max(0, entry.get('score', 0))
+                cleaned.append(entry)
+            else:
+                self.logger.warning(f"Skipping malformed entry: {entry}")
+        return cleaned
 
-if __name__ == "__main__":
-    sample = [{"uid": "p123", "score": 1500, "ping": 24.5, "status": "online"}]
-    print(serialize_to_json(batch_process_stats(sample)))
+    def _is_valid(self, entry: Dict) -> bool:
+        """Validates player session dictionary structure."""
+        required = ['player_id', 'session_id']
+        return all(key in entry for key in required)
+
+    def aggregate_sessions(self, data: List[Dict]) -> Dict[str, float]:
+        """Calculates average session duration per player."""
+        totals: Dict[str, List[float]] = {}
+        for entry in data:
+            pid = entry['player_id']
+            totals.setdefault(pid, []).append(entry.get('duration', 0))
+        
+        return {pid: sum(durs) / len(durs) for pid, durs in totals.items()}
