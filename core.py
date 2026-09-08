@@ -1,49 +1,34 @@
-import functools
+import json
+import os
+from typing import Dict, Any, Optional
 
-class GameAutomationCore:
-    """Core module for gaming automation with performance optimizations."""
+def load_game_state(file_path: str) -> Dict[str, Any]:
+    """Loads and validates JSON game state files."""
+    if not os.path.exists(file_path):
+        return {}
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, IOError):
+        return {}
 
-    def __init__(self):
-        self.active_tasks = set()
-        self.state_cache = {}
+def save_game_state(file_path: str, data: Dict[str, Any]) -> bool:
+    """Serializes game state dictionary to JSON file."""
+    try:
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        return True
+    except IOError:
+        return False
 
-    def add_task(self, task_id):
-        # Use set for O(1) addition and lookup
-        self.active_tasks.add(task_id)
+def get_stat_value(data: Dict[str, Any], key: str, default: int = 0) -> int:
+    """Extracts integer statistics with fallback default."""
+    return int(data.get(key, default))
 
-    @functools.lru_cache(maxsize=512)
-    def calculate_efficiency(self, task_type, stats_tuple):
-        # Cached computation for performance
-        # Simulate complex gaming calculation
-        if not stats_tuple:
-            base_score = 0
-        else:
-            base_score = sum(value for _, value in stats_tuple)
-        efficiency = (base_score * 1.5) + hash(task_type) % 50
-        return efficiency
-
-    def optimize_task_queue(self, tasks, player_stats):
-        # Batch process with cache to avoid redundant calculations
-        optimized = []
-        seen = set()
-        for task in tasks:
-            if task in seen:
-                continue
-            seen.add(task)
-            task_type = task.get('type', 'default')
-            stats = task.get('stats', player_stats)
-            stats_tuple = tuple(sorted(stats.items())) if isinstance(stats, dict) else ()
-            efficiency = self.calculate_efficiency(task_type, stats_tuple)
-            optimized.append((task, efficiency))
-        # Sort by efficiency descending
-        optimized.sort(key=lambda x: x[1], reverse=True)
-        return [item[0] for item in optimized[:10]]
-
-    def process_game_loop(self, incoming_events):
-        # Optimized filtering using set
-        new_events = []
-        for event in incoming_events:
-            if event not in self.active_tasks:
-                new_events.append(event)
-                self.add_task(event)
-        return new_events
+def update_player_level(data: Dict[str, Any], xp: int) -> Dict[str, Any]:
+    """Calculates level based on experience points."""
+    data['level'] = (xp // 1000) + 1
+    data['xp'] = xp
+    return data
