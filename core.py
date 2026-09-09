@@ -1,34 +1,39 @@
-import json
-import os
-from typing import Dict, Any, Optional
+import time
+import random
+import logging
 
-def load_game_state(file_path: str) -> Dict[str, Any]:
-    """Loads and validates JSON game state files."""
-    if not os.path.exists(file_path):
-        return {}
-    
-    try:
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-            return data if isinstance(data, dict) else {}
-    except (json.JSONDecodeError, IOError):
-        return {}
+# Core automation helper functions for game interaction
 
-def save_game_state(file_path: str, data: Dict[str, Any]) -> bool:
-    """Serializes game state dictionary to JSON file."""
-    try:
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=4)
-        return True
-    except IOError:
+logger = logging.getLogger(__name__)
+
+def random_sleep(min_sec=1.0, max_sec=3.0):
+    """Simulate human-like delays between actions."""
+    delay = random.uniform(min_sec, max_sec)
+    time.sleep(delay)
+    return delay
+
+def retry_operation(func, retries=3, backoff=2.0):
+    """Execute a function with basic retry logic."""
+    last_ex = None
+    for i in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            logger.warning(f"Attempt {i+1} failed: {e}")
+            last_ex = e
+            time.sleep(backoff * (i + 1))
+    raise last_ex
+
+def format_coords(x, y, offset=0):
+    """Apply screen offsets to coordinate pairs."""
+    return (x + offset, y + offset)
+
+def validate_game_state(state, expected_keys):
+    """Check if game state dict contains required keys."""
+    if not isinstance(state, dict):
         return False
+    return all(key in state for key in expected_keys)
 
-def get_stat_value(data: Dict[str, Any], key: str, default: int = 0) -> int:
-    """Extracts integer statistics with fallback default."""
-    return int(data.get(key, default))
-
-def update_player_level(data: Dict[str, Any], xp: int) -> Dict[str, Any]:
-    """Calculates level based on experience points."""
-    data['level'] = (xp // 1000) + 1
-    data['xp'] = xp
-    return data
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    logger.info("core automation helpers initialized")
