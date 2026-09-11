@@ -1,37 +1,42 @@
 import logging
 import sys
-from pathlib import Path
+from typing import Optional
 
-# Configure centralized logging for automation-tool-39
-LOG_DIR = Path("logs")
-LOG_DIR.mkdir(exist_ok=True)
+def setup_logger(name: str = "automation", log_file: str = "bot.log", level: int = logging.INFO) -> logging.Logger:
+    """Configures and returns a custom logger for gaming automation tasks."""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-logger = logging.getLogger("automation_tool")
-logger.setLevel(logging.INFO)
+    if logger.handlers:
+        return logger
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "[%(asctime)s] [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
 
-# Console handler
-stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setFormatter(formatter)
-logger.addHandler(stdout_handler)
+    # Console handler for realtime feedback
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
-# File handler
-file_handler = logging.FileHandler(LOG_DIR / "runtime.log")
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+    # File handler for persistent session logs
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-def get_logger(name: str) -> logging.Logger:
-    """Returns a child logger for module specific context."""
-    return logger.getChild(name)
+    return logger
 
-def log_performance(func):
-    """Decorator for tracking execution timing."""
-    def wrapper(*args, **kwargs):
-        import time
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        end = time.perf_counter()
-        logger.debug(f"{func.__name__} took {end - start:.4f}s")
-        return result
-    return wrapper
+def log_action(logger: logging.Logger, action: str, status: str = "SUCCESS", details: Optional[str] = None) -> None:
+    """Helper to record structured gaming bot actions."""
+    message = f"Action: {action} | Status: {status}"
+    if details:
+        message += f" | Details: {details}"
+
+    status_upper = status.upper()
+    if status_upper == "SUCCESS":
+        logger.info(message)
+    elif status_upper in ("WARNING", "WARN"):
+        logger.warning(message)
+    else:
+        logger.error(message)
