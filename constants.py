@@ -1,35 +1,54 @@
-from typing import Dict, Tuple
+"""
+Game automation constants and configuration structures.
+Reorganized to group keybindings, screen region defaults, and color thresholds.
+"""
 
-# Game state definitions for automation state machine
-STATE_UNKNOWN = "unknown"
-STATE_MAIN_MENU = "main_menu"
-STATE_LOBBY = "lobby"
-STATE_LOADING = "loading"
-STATE_IN_GAME = "in_game"
-STATE_MATCH_END = "match_end"
+from enum import Enum
+from typing import NamedTuple, Tuple
 
-# Color definitions (RGB) for pixel-detection automation (UI scanning)
-COLOR_HEALTH_BAR_RED: Tuple[int, int, int] = (220, 20, 60)
-COLOR_SHIELD_BAR_BLUE: Tuple[int, int, int] = (0, 191, 255)
-COLOR_ACTIVE_BUTTON_GOLD: Tuple[int, int, int] = (255, 215, 0)
-COLOR_TEXT_WHITE: Tuple[int, int, int] = (255, 255, 255)
 
-# Standard scanning resolutions and aspect ratios
-TARGET_RESOLUTION: Tuple[int, int] = (1920, 1080)
-COLOR_MATCH_TOLERANCE: int = 15  # Acceptable color delta for screen matching
+class GameState(Enum):
+    UNKNOWN = 0
+    LOBBY = 1
+    MATCH_SEARCHING = 2
+    IN_GAME = 3
+    VICTORY_SCREEN = 4
+    DEFEAT_SCREEN = 5
 
-# Item rarity scoring system (useful for sorting inventory data)
-RARITY_TIERS: Dict[str, int] = {
-    "COMMON": 1,
-    "UNCOMMON": 2,
-    "RARE": 3,
-    "EPIC": 4,
-    "LEGENDARY": 5,
-    "MYTHIC": 6
-}
 
-# Automation delay settings (seconds) to prevent anti-cheat triggers
-DELAY_SHORT: float = 0.15
-DELAY_MEDIUM: float = 0.5
-DELAY_LONG: float = 1.5
-DELAY_SAFETY_BUFFER: float = 0.05
+class ScreenRegion(NamedTuple):
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class KeyBinding(Enum):
+    PRIMARY_ATTACK = "z"
+    SECONDARY_ATTACK = "x"
+    HEAL_ITEM = "1"
+    MANA_POTION = "2"
+    OPEN_INVENTORY = "i"
+    CONFIRM_DIALOG = "space"
+    CANCEL_DIALOG = "escape"
+
+
+# Window and graphics constants
+GAME_TITLE: str = "Realm Legend Online v1.4"
+DEFAULT_WINDOW_SIZE: Tuple[int, int] = (1920, 1080)
+TARGET_FPS: int = 60
+
+# Detection & Matching Thresholds
+MATCH_CONFIDENCE_THRESHOLD: float = 0.85
+COLOR_TOLERANCE_RGB: Tuple[int, int, int] = (15, 15, 15)
+
+# Standard timing delays (in seconds)
+ACTION_DELAY_SHORT: float = 0.15
+ACTION_DELAY_LONG: float = 0.80
+POLL_INTERVAL_FPS: float = 0.05
+
+# Region coordinates relative to standard 1080p window
+HEALTH_BAR_REGION = ScreenRegion(50, 40, 300, 25)
+MANA_BAR_REGION = ScreenRegion(50, 70, 300, 25)
+MINIMAP_REGION = ScreenRegion(1620, 40, 250, 250)
+ACTION_BAR_REGION = ScreenRegion(660, 980, 600, 80)
