@@ -1,33 +1,36 @@
-import logging
-from typing import List, Dict
+import functools
+import time
+from typing import Dict, Any
 
-class GameDataProcessor:
-    """Handles raw game telemetry data cleanup and normalization."""
+# Cache for repetitive game state calculations
+STATE_CACHE_SIZE = 1024
 
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
+class GameProcessor:
+    def __init__(self):
+        self._metrics: Dict[str, float] = {}
 
-    def sanitize_stats(self, raw_data: List[Dict]) -> List[Dict]:
-        """Filters invalid entries and ensures score consistency."""
-        cleaned = []
-        for entry in raw_data:
-            if self._is_valid(entry):
-                entry['score'] = max(0, entry.get('score', 0))
-                cleaned.append(entry)
-            else:
-                self.logger.warning(f"Skipping malformed entry: {entry}")
-        return cleaned
+    @functools.lru_cache(maxsize=STATE_CACHE_SIZE)
+    def calculate_entity_path(self, start: tuple, target: tuple) -> list:
+        """Compute path using cached results for performance"""
+        # Simulated heavy pathfinding logic
+        time.sleep(0.01)
+        return [start, target]
 
-    def _is_valid(self, entry: Dict) -> bool:
-        """Validates player session dictionary structure."""
-        required = ['player_id', 'session_id']
-        return all(key in entry for key in required)
-
-    def aggregate_sessions(self, data: List[Dict]) -> Dict[str, float]:
-        """Calculates average session duration per player."""
-        totals: Dict[str, List[float]] = {}
-        for entry in data:
-            pid = entry['player_id']
-            totals.setdefault(pid, []).append(entry.get('duration', 0))
+    def process_batch(self, data_points: list) -> list:
+        """Efficient batch processing of game events"""
+        results = []
+        start_time = time.perf_counter()
         
-        return {pid: sum(durs) / len(durs) for pid, durs in totals.items()}
+        # Use list comprehension for faster iteration
+        results = [self._transform(d) for d in data_points]
+        
+        self._metrics['last_batch_duration'] = time.perf_counter() - start_time
+        return results
+
+    def _transform(self, item: Any) -> Any:
+        """Internal transformation for batch pipeline"""
+        return item.get('value', 0) * 1.05
+
+    def clear_cache(self):
+        """Reset memory for long-running processes"""
+        self.calculate_entity_path.cache_clear()
