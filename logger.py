@@ -1,42 +1,41 @@
 import logging
 import sys
-from typing import Optional
+from pathlib import Path
 
-def setup_logger(name: str = "automation", log_file: str = "bot.log", level: int = logging.INFO) -> logging.Logger:
-    """Configures and returns a custom logger for gaming automation tasks."""
+# automation-tool-39 logging configuration
+LOG_FILE = "automation.log"
+
+def setup_logger(name: str = "automation-tool") -> logging.Logger:
+    """Configures a standard logger for the automation tool."""
     logger = logging.getLogger(name)
-    logger.setLevel(level)
+    logger.setLevel(logging.INFO)
 
-    if logger.handlers:
-        return logger
+    # ensure handler uniqueness
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
 
-    formatter = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+        # console output
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
-    # Console handler for realtime feedback
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    # File handler for persistent session logs
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+        # file output
+        file_handler = logging.FileHandler(LOG_FILE)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     return logger
 
-def log_action(logger: logging.Logger, action: str, status: str = "SUCCESS", details: Optional[str] = None) -> None:
-    """Helper to record structured gaming bot actions."""
-    message = f"Action: {action} | Status: {status}"
-    if details:
-        message += f" | Details: {details}"
-
-    status_upper = status.upper()
-    if status_upper == "SUCCESS":
-        logger.info(message)
-    elif status_upper in ("WARNING", "WARN"):
-        logger.warning(message)
-    else:
-        logger.error(message)
+def log_event(logger: logging.Logger, message: str, level: str = "info"):
+    """Wrapper to route messages based on severity string."""
+    levels = {
+        "info": logger.info,
+        "warning": logger.warning,
+        "error": logger.error,
+        "debug": logger.debug
+    }
+    log_func = levels.get(level.lower(), logger.info)
+    log_func(message)
