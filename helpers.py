@@ -1,60 +1,33 @@
+import time
 import random
-from typing import Tuple
+import pyautogui
 
-def calculate_click_point(bbox: Tuple[int, int, int, int], variance_pct: float = 0.1) -> Tuple[int, int]:
-    """
-    Calculates a randomized click coordinate within a bounding box
-    to prevent anti-cheat engines from detecting static bot-like clicks.
-    
-    :param bbox: A tuple representing (x, y, width, height)
-    :param variance_pct: Safety margin percentage to avoid clicking the very edge
-    :return: A tuple of (x, y) coordinates
-    """
-    x, y, w, h = bbox
-    
-    # Restrict clicking boundaries to prevent clicking border pixels
-    x_pad = int(w * variance_pct)
-    y_pad = int(h * variance_pct)
-    
-    inner_left = x + x_pad
-    inner_right = x + w - x_pad
-    inner_top = y + y_pad
-    inner_bottom = y + h - y_pad
-    
-    # Safeguard against highly compressed bounding boxes
-    if inner_left >= inner_right:
-        inner_left, inner_right = x, x + w
-    if inner_top >= inner_bottom:
-        inner_top, inner_bottom = y, y + h
-        
-    target_x = random.randint(inner_left, inner_right)
-    target_y = random.randint(inner_top, inner_bottom)
-    return target_x, target_y
+def sleep_random(min_sec: float = 0.5, max_sec: float = 2.0):
+    """Pauses execution for a random duration to mimic human input."""
+    time.sleep(random.uniform(min_sec, max_sec))
 
+def click_at(x: int, y: int, duration: float = 0.1):
+    """Performs a mouse click at specific coordinates."""
+    pyautogui.moveTo(x, y, duration=duration)
+    pyautogui.click()
 
-def scale_coordinate(
-    point: Tuple[int, int], 
-    base_res: Tuple[int, int],
-    target_res: Tuple[int, int]
-) -> Tuple[int, int]:
-    """
-    Scales an (x, y) coordinate mapped in a standard design resolution
-    to fit the active display configuration of the running game.
-    """
-    base_w, base_h = base_res
-    target_w, target_h = target_res
-    
-    scale_x = target_w / base_w
-    scale_y = target_h / base_h
-    
-    scaled_x = int(point[0] * scale_x)
-    scaled_y = int(point[1] * scale_y)
-    return scaled_x, scaled_y
+def get_screen_center():
+    """Calculates the center of the primary display."""
+    width, height = pyautogui.size()
+    return width // 2, height // 2
 
+def type_text_safe(text: str, interval: float = 0.05):
+    """Types text with a delay between keystrokes to prevent input loss."""
+    for char in text:
+        pyautogui.press(char)
+        time.sleep(interval)
 
-def rgb_color_match(color_a: Tuple[int, int, int], color_b: Tuple[int, int, int], tolerance: int = 15) -> bool:
-    """
-    Compares two RGB colors within a given tolerance threshold.
-    Typically used for evaluating health bars, cooldown indicators, and UI transitions.
-    """
-    return all(abs(a - b) <= tolerance for a, b in zip(color_a, color_b))
+def is_pixel_color(x: int, y: int, expected_rgb: tuple, tolerance: int = 10) -> bool:
+    """Checks if a pixel matches the target color within a tolerance range."""
+    current_rgb = pyautogui.pixel(x, y)
+    return all(abs(c - e) <= tolerance for c, e in zip(current_rgb, expected_rgb))
+
+def screenshot_region(x: int, y: int, w: int, h: int, filename: str = "capture.png"):
+    """Saves a specific region of the screen to disk."""
+    img = pyautogui.screenshot(region=(x, y, w, h))
+    img.save(filename)
