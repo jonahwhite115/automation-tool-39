@@ -1,41 +1,38 @@
 import logging
+import os
 import sys
-from pathlib import Path
 
-# automation-tool-39 logging configuration
-LOG_FILE = "automation.log"
-
-def setup_logger(name: str = "automation-tool") -> logging.Logger:
-    """Configures a standard logger for the automation tool."""
+def setup_logger(name: str, log_file: str = 'automation.log'):
+    """Configures a robust logger for automation-tool-39."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
-    # ensure handler uniqueness
-    if not logger.handlers:
-        formatter = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
+    try:
+        # Ensure directory exists for log file
+        log_dir = os.path.dirname(log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
 
-        # console output
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-
-        # file output
-        file_handler = logging.FileHandler(LOG_FILE)
+        file_handler = logging.FileHandler(log_file)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
+    except (PermissionError, OSError) as e:
+        # Fallback to console if file logging fails
+        print(f"Critical: Failed to initialize log file at {log_file}: {e}", file=sys.stderr)
+        stream_handler = logging.StreamHandler()
+        logger.addHandler(stream_handler)
+    
     return logger
 
-def log_event(logger: logging.Logger, message: str, level: str = "info"):
-    """Wrapper to route messages based on severity string."""
-    levels = {
-        "info": logger.info,
-        "warning": logger.warning,
-        "error": logger.error,
-        "debug": logger.debug
-    }
-    log_func = levels.get(level.lower(), logger.info)
-    log_func(message)
+# Global instance for tool-wide use
+logger = setup_logger('automation-tool-39')
+
+def log_error(exception: Exception, context: str = "unknown process"):
+    """Standardized error logging for edge case management."""
+    if not isinstance(exception, Exception):
+        logger.error(f"Invalid error type received in {context}")
+        return
+    
+    logger.error(f"Exception occurred in {context}: {str(exception)}", exc_info=True)
