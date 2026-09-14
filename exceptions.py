@@ -1,48 +1,26 @@
-"""Custom exceptions for gaming data handling and automation pipeline."""
+class AutomationError(Exception):
+    """Base exception class for automation-tool-39."""
+    pass
 
-from typing import Any, Dict, Optional
+class GameSessionError(AutomationError):
+    """Raised when game interaction fails."""
+    pass
 
+class ConfigurationError(AutomationError):
+    """Raised when config files are invalid."""
+    pass
 
-class GamingDataError(Exception):
-    """Base exception for all gaming data processing errors."""
+class ProcessNotFoundError(AutomationError):
+    """Raised when the target game process is missing."""
+    pass
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
-        super().__init__(message)
-        self.message = message
-        self.details = details or {}
+class ResourceLimitError(AutomationError):
+    """Raised when system resources are exhausted."""
+    pass
 
-    def __str__(self) -> str:
-        if self.details:
-            return f"{self.message} | Context: {self.details}"
-        return self.message
-
-
-class TelemetryParsingError(GamingDataError):
-    """Raised when raw game telemetry payload cannot be parsed."""
-
-    def __init__(self, raw_payload: str, reason: str) -> None:
-        message = f"Failed to parse telemetry data: {reason}"
-        details = {"payload_sample": raw_payload[:100]}
-        super().__init__(message, details)
-
-
-class InvalidPlayerDataError(GamingDataError):
-    """Raised when player profile or inventory stats fail validation."""
-
-    def __init__(self, player_id: str, field_name: str, expected_type: str) -> None:
-        message = f"Invalid player data attribute '{field_name}'"
-        details = {
-            "player_id": player_id,
-            "field": field_name,
-            "expected_type": expected_type,
-        }
-        super().__init__(message, details)
-
-
-class MatchDataNotFoundError(GamingDataError):
-    """Raised when requested match or lobby ID is missing from API data."""
-
-    def __init__(self, match_id: str) -> None:
-        message = f"Match record for ID '{match_id}' not found"
-        details = {"match_id": match_id}
-        super().__init__(message, details)
+def handle_exception(e: Exception) -> None:
+    """Standardized exception reporting for game automation modules."""
+    if isinstance(e, AutomationError):
+        print(f"[Automation Error]: {str(e)}")
+    else:
+        print(f"[Critical System Error]: {type(e).__name__} - {str(e)}")
