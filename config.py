@@ -5,35 +5,41 @@ from typing import Any, Dict
 DEFAULT_CONFIG = {
     "fps_limit": 60,
     "auto_clicker": False,
-    "keybinds": {
-        "macro": "F8",
-        "toggle": "F9"
-    }
+    "sensitivity": 1.0,
+    "save_path": "./saves"
 }
 
 class ConfigLoader:
-    """Handles loading and merging of application settings."""
-    
     def __init__(self, config_path: str = "config.json"):
-        self.path = config_path
+        self.config_path = config_path
+        self.settings = DEFAULT_CONFIG.copy()
+        self._load_config()
 
-    def load(self) -> Dict[str, Any]:
-        """Loads config from file, falls back to defaults if missing."""
-        if not os.path.exists(self.path):
+    def _load_config(self) -> None:
+        """Loads existing configuration or writes defaults if missing."""
+        if not os.path.exists(self.config_path):
             self._save_defaults()
-            return DEFAULT_CONFIG
-            
+            return
+
         try:
-            with open(self.path, "r") as f:
-                user_config = json.load(f)
-            return {**DEFAULT_CONFIG, **user_config}
+            with open(self.config_path, "r") as f:
+                user_data = json.load(f)
+                self.settings.update(user_data)
         except (json.JSONDecodeError, IOError):
-            return DEFAULT_CONFIG
+            self._save_defaults()
 
     def _save_defaults(self) -> None:
-        """Persists default configuration to disk."""
+        """Writes initial configuration file to disk."""
         try:
-            with open(self.path, "w") as f:
-                json.dump(DEFAULT_CONFIG, f, indent=4)
+            with open(self.config_path, "w") as f:
+                json.dump(self.settings, f, indent=4)
         except IOError as e:
-            print(f"Failed to write default config: {e}")
+            print(f"Failed to save configuration: {e}")
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.settings.get(key, default)
+
+    def update_setting(self, key: str, value: Any) -> None:
+        self.settings[key] = value
+        with open(self.config_path, "w") as f:
+            json.dump(self.settings, f, indent=4)
