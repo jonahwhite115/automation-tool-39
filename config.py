@@ -5,41 +5,27 @@ from typing import Any, Dict
 DEFAULT_CONFIG = {
     "fps_limit": 60,
     "auto_clicker": False,
-    "sensitivity": 1.0,
-    "save_path": "./saves"
+    "log_level": "INFO",
+    "window_mode": "borderless"
 }
 
-class ConfigLoader:
-    def __init__(self, config_path: str = "config.json"):
-        self.config_path = config_path
-        self.settings = DEFAULT_CONFIG.copy()
-        self._load_config()
+def load_config(filepath: str) -> Dict[str, Any]:
+    """Loads config from json, merging with defaults."""
+    config = DEFAULT_CONFIG.copy()
 
-    def _load_config(self) -> None:
-        """Loads existing configuration or writes defaults if missing."""
-        if not os.path.exists(self.config_path):
-            self._save_defaults()
-            return
+    if not os.path.exists(filepath):
+        return config
 
-        try:
-            with open(self.config_path, "r") as f:
-                user_data = json.load(f)
-                self.settings.update(user_data)
-        except (json.JSONDecodeError, IOError):
-            self._save_defaults()
+    try:
+        with open(filepath, 'r') as f:
+            user_config = json.load(f)
+            config.update(user_config)
+    except (json.JSONDecodeError, IOError):
+        pass
 
-    def _save_defaults(self) -> None:
-        """Writes initial configuration file to disk."""
-        try:
-            with open(self.config_path, "w") as f:
-                json.dump(self.settings, f, indent=4)
-        except IOError as e:
-            print(f"Failed to save configuration: {e}")
+    return config
 
-    def get(self, key: str, default: Any = None) -> Any:
-        return self.settings.get(key, default)
-
-    def update_setting(self, key: str, value: Any) -> None:
-        self.settings[key] = value
-        with open(self.config_path, "w") as f:
-            json.dump(self.settings, f, indent=4)
+def save_config(filepath: str, config: Dict[str, Any]) -> None:
+    """Persists current configuration state to disk."""
+    with open(filepath, 'w') as f:
+        json.dump(config, f, indent=4)
