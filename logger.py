@@ -1,38 +1,41 @@
 import logging
-import os
 import sys
+from pathlib import Path
 
-def setup_logger(name: str, log_file: str = 'automation.log'):
-    """Configures a robust logger for automation-tool-39."""
+def setup_logger(name: str, log_file: str = "automation.log", level: int = logging.INFO) -> logging.Logger:
+    """Configures a standard logger for automation tasks."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
 
-    try:
-        # Ensure directory exists for log file
-        log_dir = os.path.dirname(log_file)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+    # Prevent duplicate handlers if logger is re-initialized
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
 
+        # File output for persistent logs
         file_handler = logging.FileHandler(log_file)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
-    except (PermissionError, OSError) as e:
-        # Fallback to console if file logging fails
-        print(f"Critical: Failed to initialize log file at {log_file}: {e}", file=sys.stderr)
-        stream_handler = logging.StreamHandler()
-        logger.addHandler(stream_handler)
-    
+        # Stream output for console debugging
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
     return logger
 
-# Global instance for tool-wide use
-logger = setup_logger('automation-tool-39')
+def log_performance(func):
+    """Decorator to measure execution time of gaming routines."""
+    import time
+    from functools import wraps
 
-def log_error(exception: Exception, context: str = "unknown process"):
-    """Standardized error logging for edge case management."""
-    if not isinstance(exception, Exception):
-        logger.error(f"Invalid error type received in {context}")
-        return
-    
-    logger.error(f"Exception occurred in {context}: {str(exception)}", exc_info=True)
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        duration = time.perf_counter() - start
+        logging.getLogger("performance").info(f"{func.__name__} took {duration:.4f}s")
+        return result
+    return wrapper
