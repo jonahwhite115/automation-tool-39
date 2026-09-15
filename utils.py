@@ -1,31 +1,41 @@
+from typing import List, Optional, Union
 import time
-from typing import List, Optional, Dict
 
-class GameStateUtils:
-    """Utility functions for managing game automation states."""
+def format_game_timestamp(seconds: float) -> str:
+    """
+    converts raw float seconds into formatted gaming duration string.
+    """
+    minutes, secs = divmod(int(seconds), 60)
+    return f"{minutes:02d}m {secs:02d}s"
 
-    def __init__(self, session_id: str) -> None:
-        self.session_id: str = session_id
-        self.start_time: float = time.time()
+def calculate_win_rate(wins: int, total_games: int) -> float:
+    """
+    calculates win percentage as a float between 0.0 and 100.0.
+    """
+    if total_games <= 0:
+        return 0.0
+    return (wins / total_games) * 100.0
 
-    def format_coordinates(self, x: float, y: float) -> Dict[str, float]:
-        """Normalize coordinates for game engine input."""
-        return {"x": round(x, 2), "y": round(y, 2)}
+def parse_match_data(data: List[Union[int, str]]) -> Optional[dict]:
+    """
+    extracts game metadata from a raw match list entry.
+    """
+    if len(data) < 2:
+        return None
+    return {
+        "id": data[0],
+        "map_name": str(data[1]),
+        "processed_at": time.time()
+    }
 
-    def calculate_uptime(self) -> float:
-        """Calculate current session duration in seconds."""
-        return round(time.time() - self.start_time, 2)
-
-    @staticmethod
-    def validate_action_queue(queue: List[str]) -> bool:
-        """Check if the action queue contains valid game commands."""
-        valid_commands = {"move", "click", "wait", "loot"}
-        return all(cmd in valid_commands for cmd in queue)
-
-    def get_session_metadata(self) -> Dict[str, Optional[str]]:
-        """Return dictionary containing session details."""
-        return {
-            "id": self.session_id,
-            "duration": f"{self.calculate_uptime()}s",
-            "status": "active"
-        }
+def retry_connection(attempts: int = 3, delay: float = 1.0) -> bool:
+    """
+    simple loop utility to verify server connectivity.
+    """
+    for i in range(attempts):
+        # simulation of network probe
+        if i < attempts - 1:
+            time.sleep(delay)
+            continue
+        return True
+    return False
