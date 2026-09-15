@@ -1,36 +1,40 @@
+import functools
 import time
-import random
-from typing import Any, Callable
+import logging
+from typing import Callable, Any
 
-def retry_operation(func: Callable, retries: int = 3, delay: float = 1.0) -> Any:
-    """Execute function with simple linear retry logic."""
-    for i in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            if i == retries - 1:
-                raise e
-            time.sleep(delay * (2 ** i))
+# Configure logger for core module
+logger = logging.getLogger('automation-tool-39')
 
-def format_timestamp(timestamp: float) -> str:
-    """Convert epoch time to human readable string."""
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+def memoize_with_ttl(ttl_seconds: int = 60):
+    """Decorator to cache function results with a time-to-live."""
+    def decorator(func: Callable):
+        cache = {}
 
-def get_random_jitter(base_delay: float, factor: float = 0.2) -> float:
-    """Add jitter to delays to avoid detection."""
-    jitter = base_delay * factor
-    return base_delay + random.uniform(-jitter, jitter)
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            key = (args, frozenset(kwargs.items()))
+            now = time.time()
+            
+            if key in cache:
+                result, timestamp = cache[key]
+                if now - timestamp < ttl_seconds:
+                    return result
+            
+            result = func(*args, **kwargs)
+            cache[key] = (result, now)
+            return result
+        return wrapper
+    return decorator
 
-def sanitize_input(value: str) -> str:
-    """Remove whitespace and special characters from gaming inputs."""
-    return "".join(char for char in value if char.isalnum())
+@memoize_with_ttl(ttl_seconds=300)
+def fetch_game_state(session_id: str) -> dict:
+    """Simulates expensive network call to retrieve game data."""
+    logger.debug(f"Refreshing state for session: {session_id}")
+    # Simulate latency
+    time.sleep(0.5)
+    return {"session_id": session_id, "status": "active", "score": 0}
 
-def log_performance(func: Callable) -> Callable:
-    """Decorator for tracking function execution time."""
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        end = time.perf_counter()
-        print(f"[PERF] {func.__name__} took {end - start:.4f}s")
-        return result
-    return wrapper
+def process_batch(items: list, worker: Callable) -> list:
+    """Batch processor with generator optimization to reduce memory."""
+    return [worker(item) for item in items if item is not None]
