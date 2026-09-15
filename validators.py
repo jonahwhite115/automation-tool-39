@@ -1,25 +1,27 @@
 import re
+from typing import Any, Optional
 
-def validate_game_input(user_input: str) -> bool:
-    """
-    Validates player input for gaming automation tasks.
-    Ensures input is alphanumeric and within length constraints.
-    """
-    if not user_input or not isinstance(user_input, str):
+# Gaming asset validation constants
+MAX_GAMERTAG_LENGTH = 16
+ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+class ValidationError(Exception):
+    """Custom exception for validation failures."""
+    pass
+
+def validate_gamertag(name: str) -> bool:
+    """Ensures gamertag follows community guidelines."""
+    if not name or len(name) > MAX_GAMERTAG_LENGTH:
         return False
-    
-    # Only allow alphanumeric characters, length 3-32
-    pattern = r'^[a-zA-Z0-9]{3,32}$'
-    return bool(re.match(pattern, user_input))
+    return bool(ID_PATTERN.match(name))
 
-def sanitize_macro_command(command: str) -> str:
-    """
-    Basic sanitization to strip unsafe characters.
-    """
-    return re.sub(r'[^a-zA-Z0-9_]', '', command)
+def validate_server_region(region: str) -> bool:
+    """Verifies region string is within supported zones."""
+    supported_regions = {'na-east', 'na-west', 'eu-central', 'asia-east'}
+    return region.lower() in supported_regions
 
-def validate_coordinate_range(x: int, y: int, max_x: int = 1920, max_y: int = 1080) -> bool:
-    """
-    Ensures screen coordinates are within defined game bounds.
-    """
-    return 0 <= x <= max_x and 0 <= y <= max_y
+def sanitize_input(data: Any) -> Optional[str]:
+    """Strips whitespace and ensures string format."""
+    if not isinstance(data, str):
+        return None
+    return data.strip()
