@@ -1,35 +1,42 @@
-import time
-import functools
 import logging
 
-logger = logging.getLogger(__name__)
+# Configure logger for automation-tool-39
+logger = logging.getLogger('automation-tool-39')
 
-def retry_network_operation(max_attempts=3, delay=2, backoff=2):
-    """Decorator to retry network operations with exponential backoff."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            attempts = 0
-            current_delay = delay
-            while attempts < max_attempts:
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    attempts += 1
-                    if attempts >= max_attempts:
-                        logger.error(f"Final attempt failed for {func.__name__}: {e}")
-                        raise
-                    logger.warning(f"Retry {attempts}/{max_attempts} for {func.__name__} due to: {e}")
-                    time.sleep(current_delay)
-                    current_delay *= backoff
-            return None
-        return wrapper
-    return decorator
-
-def validate_network_status(response):
-    """Standard validator for game API network responses."""
-    if response is None:
+def validate_game_input(data):
+    """
+    Validates game action dictionary structure and value types.
+    Ensures input is safe for processing loop execution.
+    """
+    required_keys = {'action', 'payload', 'timestamp'}
+    
+    # Validate dictionary structure
+    if not isinstance(data, dict) or not required_keys.issubset(data.keys()):
+        logger.error(f"Invalid input structure: {data}")
         return False
-    if hasattr(response, 'status_code'):
-        return 200 <= response.status_code < 300
+
+    # Validate action type constraints
+    if not isinstance(data['action'], str) or len(data['action']) > 32:
+        logger.warning(f"Action string malformed: {data['action']}")
+        return False
+
+    # Validate payload type (must be dictionary)
+    if not isinstance(data['payload'], dict):
+        logger.warning("Payload must be a dictionary")
+        return False
+
+    # Validate numeric bounds for simulation
+    if 'intensity' in data['payload']:
+        val = data['payload']['intensity']
+        if not isinstance(val, (int, float)) or not (0 <= val <= 100):
+            logger.error("Intensity outside valid range 0-100")
+            return False
+            
     return True
+
+def sanitize_input(data):
+    """
+    Cleans input payload of unexpected keys before processing.
+    """
+    allowed_keys = {'intensity', 'target', 'mode'}
+    return {k: v for k, v in data.items() if k in allowed_keys}
