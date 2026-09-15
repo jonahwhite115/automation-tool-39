@@ -1,25 +1,36 @@
 import time
-import functools
+import random
 import logging
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('automation-tool-39')
 
-def retry_network_operation(max_retries=3, delay=2):
-    """Decorator for retrying network operations on failure."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            last_exception = None
-            for attempt in range(1, max_retries + 1):
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    last_exception = e
-                    logger.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay}s...")
-                    if attempt < max_retries:
-                        time.sleep(delay)
-            
-            logger.error(f"Operation failed after {max_retries} attempts.")
-            raise last_exception
-        return wrapper
-    return decorator
+def sleep_random(min_sec: float = 1.0, max_sec: float = 3.0) -> None:
+    """Pauses execution for a randomized duration to simulate human input."""
+    duration = random.uniform(min_sec, max_sec)
+    time.sleep(duration)
+
+def format_coords(x: int, y: int) -> dict:
+    """Converts raw coordinate pairs into standardized dictionaries."""
+    return {'x': x, 'y': y}
+
+def retry_operation(func, retries: int = 3, delay: float = 1.0):
+    """Retries a provided function upon failure with delay."""
+    for i in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            logger.warning(f"Attempt {i+1} failed: {e}")
+            time.sleep(delay)
+    return None
+
+def is_valid_range(value: int, min_val: int, max_val: int) -> bool:
+    """Validates that a numeric input falls within game bounds."""
+    return min_val <= value <= max_val
+
+def log_event(message: str, level: str = "info") -> None:
+    """Standardized logging for gaming automation events."""
+    if level == "error":
+        logger.error(message)
+    else:
+        logger.info(message)
