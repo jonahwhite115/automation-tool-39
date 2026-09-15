@@ -1,42 +1,27 @@
-import logging
+import re
 
-# Configure logger for automation-tool-39
-logger = logging.getLogger('automation-tool-39')
+def validate_game_input(user_input: str) -> bool:
+    """
+    Validates player commands to prevent injection 
+    and ensure valid action format.
+    """
+    # Pattern allows alphanumeric commands and basic dash separators
+    pattern = r'^[a-zA-Z0-9_-]{1,20}$'
+    return bool(re.match(pattern, user_input))
 
-def validate_game_input(data):
+def validate_numeric_input(value: str, min_val: int, max_val: int) -> bool:
     """
-    Validates game action dictionary structure and value types.
-    Ensures input is safe for processing loop execution.
+    Ensures numerical configurations are within safe bounds 
+    for gaming automation variables.
     """
-    required_keys = {'action', 'payload', 'timestamp'}
-    
-    # Validate dictionary structure
-    if not isinstance(data, dict) or not required_keys.issubset(data.keys()):
-        logger.error(f"Invalid input structure: {data}")
+    try:
+        num = int(value)
+        return min_val <= num <= max_val
+    except ValueError:
         return False
 
-    # Validate action type constraints
-    if not isinstance(data['action'], str) or len(data['action']) > 32:
-        logger.warning(f"Action string malformed: {data['action']}")
-        return False
-
-    # Validate payload type (must be dictionary)
-    if not isinstance(data['payload'], dict):
-        logger.warning("Payload must be a dictionary")
-        return False
-
-    # Validate numeric bounds for simulation
-    if 'intensity' in data['payload']:
-        val = data['payload']['intensity']
-        if not isinstance(val, (int, float)) or not (0 <= val <= 100):
-            logger.error("Intensity outside valid range 0-100")
-            return False
-            
-    return True
-
-def sanitize_input(data):
+def sanitize_input(data: str) -> str:
     """
-    Cleans input payload of unexpected keys before processing.
+    Strip whitespaces and cast to lowercase for safety.
     """
-    allowed_keys = {'intensity', 'target', 'mode'}
-    return {k: v for k, v in data.items() if k in allowed_keys}
+    return data.strip().lower()
