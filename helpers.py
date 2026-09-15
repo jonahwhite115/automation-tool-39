@@ -1,40 +1,32 @@
-import functools
+from typing import List, Dict, Union, Optional
 import time
-import logging
-from typing import Callable, Any
 
-# Configure logger for core module
-logger = logging.getLogger('automation-tool-39')
+def calculate_macro_delay(base_ms: int, variance: float = 0.1) -> float:
+    """Calculates randomized delay to prevent anti-cheat detection."""
+    import random
+    
+    offset = base_ms * variance
+    final_delay = base_ms + random.uniform(-offset, offset)
+    return max(0.0, final_delay / 1000.0)
 
-def memoize_with_ttl(ttl_seconds: int = 60):
-    """Decorator to cache function results with a time-to-live."""
-    def decorator(func: Callable):
-        cache = {}
+def format_game_coords(x: int, y: int) -> Dict[str, int]:
+    """Normalizes screen coordinates for input injection."""
+    return {"x": int(x), "y": int(y)}
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            key = (args, frozenset(kwargs.items()))
-            now = time.time()
-            
-            if key in cache:
-                result, timestamp = cache[key]
-                if now - timestamp < ttl_seconds:
-                    return result
-            
-            result = func(*args, **kwargs)
-            cache[key] = (result, now)
-            return result
-        return wrapper
-    return decorator
+def validate_session_status(active_threads: List[str]) -> bool:
+    """Checks if provided session IDs are currently tracked."""
+    return len(active_threads) > 0
 
-@memoize_with_ttl(ttl_seconds=300)
-def fetch_game_state(session_id: str) -> dict:
-    """Simulates expensive network call to retrieve game data."""
-    logger.debug(f"Refreshing state for session: {session_id}")
-    # Simulate latency
-    time.sleep(0.5)
-    return {"session_id": session_id, "status": "active", "score": 0}
+class MacroBuffer:
+    def __init__(self, capacity: int = 100) -> None:
+        self.capacity: int = capacity
+        self.queue: List[Union[str, int]] = []
 
-def process_batch(items: list, worker: Callable) -> list:
-    """Batch processor with generator optimization to reduce memory."""
-    return [worker(item) for item in items if item is not None]
+    def add_command(self, cmd: str) -> None:
+        """Appends command string if buffer under capacity."""
+        if len(self.queue) < self.capacity:
+            self.queue.append(cmd)
+
+    def clear(self) -> None:
+        """Resets the internal command queue."""
+        self.queue = []
