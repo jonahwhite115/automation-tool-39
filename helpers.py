@@ -1,33 +1,36 @@
 import time
 import random
-import pyautogui
+from typing import Any, Callable
 
-def sleep_random(min_sec: float = 0.5, max_sec: float = 2.0):
-    """Pauses execution for a random duration to mimic human input."""
-    time.sleep(random.uniform(min_sec, max_sec))
+def retry_operation(func: Callable, retries: int = 3, delay: float = 1.0) -> Any:
+    """Execute function with simple linear retry logic."""
+    for i in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            if i == retries - 1:
+                raise e
+            time.sleep(delay * (2 ** i))
 
-def click_at(x: int, y: int, duration: float = 0.1):
-    """Performs a mouse click at specific coordinates."""
-    pyautogui.moveTo(x, y, duration=duration)
-    pyautogui.click()
+def format_timestamp(timestamp: float) -> str:
+    """Convert epoch time to human readable string."""
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
 
-def get_screen_center():
-    """Calculates the center of the primary display."""
-    width, height = pyautogui.size()
-    return width // 2, height // 2
+def get_random_jitter(base_delay: float, factor: float = 0.2) -> float:
+    """Add jitter to delays to avoid detection."""
+    jitter = base_delay * factor
+    return base_delay + random.uniform(-jitter, jitter)
 
-def type_text_safe(text: str, interval: float = 0.05):
-    """Types text with a delay between keystrokes to prevent input loss."""
-    for char in text:
-        pyautogui.press(char)
-        time.sleep(interval)
+def sanitize_input(value: str) -> str:
+    """Remove whitespace and special characters from gaming inputs."""
+    return "".join(char for char in value if char.isalnum())
 
-def is_pixel_color(x: int, y: int, expected_rgb: tuple, tolerance: int = 10) -> bool:
-    """Checks if a pixel matches the target color within a tolerance range."""
-    current_rgb = pyautogui.pixel(x, y)
-    return all(abs(c - e) <= tolerance for c, e in zip(current_rgb, expected_rgb))
-
-def screenshot_region(x: int, y: int, w: int, h: int, filename: str = "capture.png"):
-    """Saves a specific region of the screen to disk."""
-    img = pyautogui.screenshot(region=(x, y, w, h))
-    img.save(filename)
+def log_performance(func: Callable) -> Callable:
+    """Decorator for tracking function execution time."""
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"[PERF] {func.__name__} took {end - start:.4f}s")
+        return result
+    return wrapper
