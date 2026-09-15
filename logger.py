@@ -1,41 +1,33 @@
 import logging
-import sys
-from pathlib import Path
+import os
+from logging.handlers import RotatingFileHandler
 
-def setup_logger(name: str, log_file: str = "automation.log", level: int = logging.INFO) -> logging.Logger:
-    """Configures a standard logger for automation tasks."""
+def setup_logger(name: str, log_file: str = 'automation.log', level: int = logging.INFO) -> logging.Logger:
+    """
+    Configures a rotating file logger for automation-tool-39.
+    Keeps 5 files of 5MB each.
+    """
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    # Prevent duplicate handlers if logger is re-initialized
+    # Prevent duplicate handlers if called multiple times
     if not logger.handlers:
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
 
-        # File output for persistent logs
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        # Rotation setup: max 5MB, keep 5 backups
+        handler = RotatingFileHandler(
+            log_file, 
+            maxBytes=5 * 1024 * 1024, 
+            backupCount=5
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
-        # Stream output for console debugging
-        console_handler = logging.StreamHandler(sys.stdout)
+        # Stream to console as well
+        console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
     return logger
-
-def log_performance(func):
-    """Decorator to measure execution time of gaming routines."""
-    import time
-    from functools import wraps
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        duration = time.perf_counter() - start
-        logging.getLogger("performance").info(f"{func.__name__} took {duration:.4f}s")
-        return result
-    return wrapper
