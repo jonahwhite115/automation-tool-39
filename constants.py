@@ -1,30 +1,29 @@
-import os
+import math
 from typing import Final
 
-# performance constants for core game engine loops
-CACHE_SIZE: Final[int] = 1024
-CHUNK_SIZE: Final[int] = 4096
-MAX_THREADS: Final[int] = os.cpu_count() or 4
+# performance-critical gaming engine constants
+# caching computed values to prevent redundant overhead
 
-# memory optimization thresholds
-BUFFER_THRESHOLD: Final[float] = 0.85
-GC_COLLECTION_INTERVAL: Final[int] = 300
+POLLING_RATE_HZ: Final[int] = 120
+FRAME_TIME_MS: Final[float] = 1000.0 / POLLING_RATE_HZ
 
-# network polling frequency in seconds
-POLL_RATE: Final[float] = 0.016
+# optimized math constants for high-frequency coordinate geometry
+SQRT_2: Final[float] = math.sqrt(2)
+PI_DIV_180: Final[float] = math.pi / 180.0
 
-# shared resource locks status
-USE_FAST_LOCKS: Final[bool] = True
+# buffer limits for memory-efficient automation processing
+MAX_INPUT_QUEUE_SIZE: Final[int] = 1024
+CACHE_EXPIRY_SECONDS: Final[int] = 30
 
-def get_optimization_mode() -> str:
-    """returns current performance configuration profile"""
-    return "high_performance" if MAX_THREADS > 4 else "balanced"
+# network latency threshold constants
+LATENCY_THRESHOLD_MS: Final[int] = 50
+RETRY_DELAY_SECONDS: Final[float] = 0.5
 
-# global registry for entity component processing
-ENTITY_COMPONENT_TYPES = [
-    "position",
-    "velocity",
-    "render",
-    "collision",
-    "input"
-]
+# coordinate space bounds for viewport scaling calculations
+VIEWPORT_WIDTH: Final[int] = 1920
+VIEWPORT_HEIGHT: Final[int] = 1080
+
+# performance bitmasks for event filtering
+EVENT_TYPE_INPUT: Final[int] = 0b0001
+EVENT_TYPE_NETWORK: Final[int] = 0b0010
+EVENT_TYPE_RENDER: Final[int] = 0b0100
