@@ -1,40 +1,31 @@
-import functools
 import time
-import logging
-from typing import Callable, Any
+from typing import List, Optional, Dict
 
-# Logger setup for automation-tool-39 core operations
-logger = logging.getLogger('automation-tool-39')
+class GameStateUtils:
+    """Utility functions for managing game automation states."""
 
-CACHE_EXPIRY = 300  # seconds
+    def __init__(self, session_id: str) -> None:
+        self.session_id: str = session_id
+        self.start_time: float = time.time()
 
-def memoize_with_expiry(func: Callable) -> Callable:
-    """Cache function results to optimize repetitive gaming tasks."""
-    cache = {}
+    def format_coordinates(self, x: float, y: float) -> Dict[str, float]:
+        """Normalize coordinates for game engine input."""
+        return {"x": round(x, 2), "y": round(y, 2)}
 
-    @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        key = (args, frozenset(kwargs.items()))
-        now = time.time()
+    def calculate_uptime(self) -> float:
+        """Calculate current session duration in seconds."""
+        return round(time.time() - self.start_time, 2)
 
-        if key in cache:
-            result, timestamp = cache[key]
-            if now - timestamp < CACHE_EXPIRY:
-                return result
-        
-        result = func(*args, **kwargs)
-        cache[key] = (result, now)
-        return result
+    @staticmethod
+    def validate_action_queue(queue: List[str]) -> bool:
+        """Check if the action queue contains valid game commands."""
+        valid_commands = {"move", "click", "wait", "loot"}
+        return all(cmd in valid_commands for cmd in queue)
 
-    return wrapper
-
-@memoize_with_expiry
-def calculate_game_state_checksum(data_points: tuple) -> int:
-    """Optimize state validation by caching computed hash values."""
-    # Simulating computationally expensive state processing
-    state_sum = sum(data_points)
-    return hash(f"{state_sum}_{len(data_points)}")
-
-def batch_process_entities(entities: list, processor: Callable) -> list:
-    """Efficient execution of updates using list comprehension patterns."""
-    return [processor(entity) for entity in entities if entity is not None]
+    def get_session_metadata(self) -> Dict[str, Optional[str]]:
+        """Return dictionary containing session details."""
+        return {
+            "id": self.session_id,
+            "duration": f"{self.calculate_uptime()}s",
+            "status": "active"
+        }
