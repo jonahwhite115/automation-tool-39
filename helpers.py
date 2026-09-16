@@ -1,32 +1,44 @@
-from typing import List, Dict, Union, Optional
+import random
 import time
+from typing import Tuple
 
-def calculate_macro_delay(base_ms: int, variance: float = 0.1) -> float:
-    """Calculates randomized delay to prevent anti-cheat detection."""
-    import random
-    
-    offset = base_ms * variance
-    final_delay = base_ms + random.uniform(-offset, offset)
-    return max(0.0, final_delay / 1000.0)
 
-def format_game_coords(x: int, y: int) -> Dict[str, int]:
-    """Normalizes screen coordinates for input injection."""
-    return {"x": int(x), "y": int(y)}
+def human_delay(min_seconds: float = 0.5, max_seconds: float = 1.5) -> None:
+    """Simulates human-like reaction time using a randomized delay."""
+    delay = random.uniform(min_seconds, max_seconds)
+    jitter = random.gauss(0, (max_seconds - min_seconds) / 6)
+    final_delay = max(min_seconds, min(max_seconds, delay + jitter))
+    time.sleep(final_delay)
 
-def validate_session_status(active_threads: List[str]) -> bool:
-    """Checks if provided session IDs are currently tracked."""
-    return len(active_threads) > 0
 
-class MacroBuffer:
-    def __init__(self, capacity: int = 100) -> None:
-        self.capacity: int = capacity
-        self.queue: List[Union[str, int]] = []
+def scale_coordinates(
+    x: int, y: int, base_res: Tuple[int, int], current_res: Tuple[int, int]
+) -> Tuple[int, int]:
+    """Scales relative UI coordinates based on target resolution."""
+    scale_x = current_res[0] / base_res[0]
+    scale_y = current_res[1] / base_res[1]
+    return int(x * scale_x), int(y * scale_y)
 
-    def add_command(self, cmd: str) -> None:
-        """Appends command string if buffer under capacity."""
-        if len(self.queue) < self.capacity:
-            self.queue.append(cmd)
 
-    def clear(self) -> None:
-        """Resets the internal command queue."""
-        self.queue = []
+def get_inventory_slot_center(
+    slot_index: int,
+    columns: int,
+    start_x: int,
+    start_y: int,
+    slot_size: int = 40,
+    spacing: int = 5,
+) -> Tuple[int, int]:
+    """Calculates the center pixel coordinates for a specific inventory grid slot."""
+    row = slot_index // columns
+    col = slot_index % columns
+
+    x = start_x + col * (slot_size + spacing) + (slot_size // 2)
+    y = start_y + row * (slot_size + spacing) + (slot_size // 2)
+    return x, y
+
+
+def is_within_bounds(
+    x: int, y: int, screen_width: int, screen_height: int
+) -> bool:
+    """Checks if target click coordinates fall within screen boundaries."""
+    return 0 <= x < screen_width and 0 <= y < screen_height
