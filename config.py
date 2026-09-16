@@ -4,28 +4,28 @@ from typing import Any, Dict
 
 DEFAULT_CONFIG = {
     "fps_limit": 60,
-    "vsync": True,
-    "save_path": "./saves",
-    "debug_mode": False
+    "resolution": "1920x1080",
+    "enable_overlay": True,
+    "log_level": "INFO"
 }
 
-def load_config(file_path: str = "config.json") -> Dict[str, Any]:
-    """Loads config from disk or returns defaults if missing."""
-    if not os.path.exists(file_path):
-        return DEFAULT_CONFIG
-
+def load_config(filepath: str) -> Dict[str, Any]:
+    """Loads json configuration with fallback to defaults."""
+    config = DEFAULT_CONFIG.copy()
+    
+    if not os.path.exists(filepath):
+        return config
+        
     try:
-        with open(file_path, "r") as f:
-            user_config = json.load(f)
-            # Merge user config with defaults to ensure missing keys are present
-            return {**DEFAULT_CONFIG, **user_config}
+        with open(filepath, 'r') as f:
+            user_data = json.load(f)
+            config.update(user_data)
     except (json.JSONDecodeError, IOError):
-        return DEFAULT_CONFIG
+        pass
+        
+    return config
 
-def save_config(config: Dict[str, Any], file_path: str = "config.json") -> None:
-    """Persists current configuration state to local json file."""
-    try:
-        with open(file_path, "w") as f:
-            json.dump(config, f, indent=4)
-    except IOError as e:
-        print(f"Failed to save configuration: {e}")
+def save_config(filepath: str, config: Dict[str, Any]) -> None:
+    """Persists current configuration to disk."""
+    with open(filepath, 'w') as f:
+        json.dump(config, f, indent=4)
