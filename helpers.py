@@ -1,44 +1,35 @@
-import random
 import time
-from typing import Tuple
+import random
+import pyautogui
 
+def sleep_random(min_sec=1.0, max_sec=3.0):
+    """Wait for a random duration to mimic human behavior."""
+    time.sleep(random.uniform(min_sec, max_sec))
 
-def human_delay(min_seconds: float = 0.5, max_seconds: float = 1.5) -> None:
-    """Simulates human-like reaction time using a randomized delay."""
-    delay = random.uniform(min_seconds, max_seconds)
-    jitter = random.gauss(0, (max_seconds - min_seconds) / 6)
-    final_delay = max(min_seconds, min(max_seconds, delay + jitter))
-    time.sleep(final_delay)
+def click_element(x, y, confidence=0.8):
+    """Perform a mouse click at specific coordinates."""
+    pyautogui.click(x, y)
+    sleep_random(0.5, 1.2)
 
+def screen_capture(region=None):
+    """Capture a portion of the screen for image analysis."""
+    return pyautogui.screenshot(region=region)
 
-def scale_coordinates(
-    x: int, y: int, base_res: Tuple[int, int], current_res: Tuple[int, int]
-) -> Tuple[int, int]:
-    """Scales relative UI coordinates based on target resolution."""
-    scale_x = current_res[0] / base_res[0]
-    scale_y = current_res[1] / base_res[1]
-    return int(x * scale_x), int(y * scale_y)
+def get_screen_resolution():
+    """Retrieve the current display dimensions."""
+    return pyautogui.size()
 
+def emergency_stop():
+    """Force fail-safe trigger for automation."""
+    pyautogui.FAILSAFE = True
+    print("Automation safety protocols enabled.")
 
-def get_inventory_slot_center(
-    slot_index: int,
-    columns: int,
-    start_x: int,
-    start_y: int,
-    slot_size: int = 40,
-    spacing: int = 5,
-) -> Tuple[int, int]:
-    """Calculates the center pixel coordinates for a specific inventory grid slot."""
-    row = slot_index // columns
-    col = slot_index % columns
+def type_command(text, interval=0.1):
+    """Simulate keyboard typing for in-game commands."""
+    pyautogui.typewrite(text, interval=interval)
+    pyautogui.press('enter')
 
-    x = start_x + col * (slot_size + spacing) + (slot_size // 2)
-    y = start_y + row * (slot_size + spacing) + (slot_size // 2)
-    return x, y
-
-
-def is_within_bounds(
-    x: int, y: int, screen_width: int, screen_height: int
-) -> bool:
-    """Checks if target click coordinates fall within screen boundaries."""
-    return 0 <= x < screen_width and 0 <= y < screen_height
+def is_pixel_color(x, y, target_color, tolerance=5):
+    """Check if a pixel matches a specific RGB color."""
+    pixel = pyautogui.pixel(x, y)
+    return all(abs(p - t) <= tolerance for p, t in zip(pixel, target_color))
