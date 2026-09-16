@@ -1,36 +1,32 @@
-import time
-import random
-import logging
+import json
+import os
+from typing import Dict, Any, Optional
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('automation-tool-39')
+def load_game_state(file_path: str) -> Dict[str, Any]:
+    """Loads and parses JSON game state file."""
+    if not os.path.exists(file_path):
+        return {}
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {}
 
-def sleep_random(min_sec: float = 1.0, max_sec: float = 3.0) -> None:
-    """Pauses execution for a randomized duration to simulate human input."""
-    duration = random.uniform(min_sec, max_sec)
-    time.sleep(duration)
+def save_game_state(file_path: str, data: Dict[str, Any]) -> bool:
+    """Saves dictionary to a JSON file."""
+    try:
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        return True
+    except IOError:
+        return False
 
-def format_coords(x: int, y: int) -> dict:
-    """Converts raw coordinate pairs into standardized dictionaries."""
-    return {'x': x, 'y': y}
+def calculate_experience_level(xp: int, base: int = 100) -> int:
+    """Calculates level based on experience points."""
+    if xp < 0:
+        return 0
+    return (xp // base) + 1
 
-def retry_operation(func, retries: int = 3, delay: float = 1.0):
-    """Retries a provided function upon failure with delay."""
-    for i in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            logger.warning(f"Attempt {i+1} failed: {e}")
-            time.sleep(delay)
-    return None
-
-def is_valid_range(value: int, min_val: int, max_val: int) -> bool:
-    """Validates that a numeric input falls within game bounds."""
-    return min_val <= value <= max_val
-
-def log_event(message: str, level: str = "info") -> None:
-    """Standardized logging for gaming automation events."""
-    if level == "error":
-        logger.error(message)
-    else:
-        logger.info(message)
+def sanitize_player_name(name: str) -> str:
+    """Removes illegal characters from player tags."""
+    return ''.join(c for c in name if c.isalnum() or c in ('_', '-'))
