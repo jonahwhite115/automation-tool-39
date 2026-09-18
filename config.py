@@ -3,47 +3,52 @@ import os
 from typing import Any, Dict
 
 DEFAULT_CONFIG: Dict[str, Any] = {
-    "target_game": "Generic MMO",
-    "fps_limit": 60,
-    "scan_interval_ms": 100,
+    "game_title": "Generic MMORPG",
+    "target_fps": 60,
     "auto_loot": True,
-    "keybindings": {
-        "interact": "e",
-        "use_potion": "q",
-        "toggle_bot": "f9"
+    "keybinds": {
+        "attack": "f1",
+        "heal": "f2",
+        "pause": "f12"
     },
-    "detection_threshold": 0.85,
-    "debug_mode": False
+    "detection_confidence": 0.85,
+    "loop_delay_seconds": 0.1
 }
 
-def load_config(filepath: str = "config.json") -> Dict[str, Any]:
-    """Load configuration from a JSON file, falling back to defaults for missing keys."""
-    config = DEFAULT_CONFIG.copy()
-    
-    if os.path.exists(filepath):
+class ConfigLoader:
+    """Handles loading and saving game automation configuration with sensible defaults."""
+
+    def __init__(self, config_path: str = "config.json"):
+        self.config_path = config_path
+        self.config: Dict[str, Any] = {}
+
+    def load_config(self) -> Dict[str, Any]:
+        """Loads configuration from file or creates it with defaults if missing."""
+        if not os.path.exists(self.config_path):
+            self.config = DEFAULT_CONFIG.copy()
+            self.save_config()
+            return self.config
+
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(self.config_path, "r", encoding="utf-8") as f:
                 user_config = json.load(f)
-                _deep_update(config, user_config)
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"Warning: Failed to load {filepath} ({e}). Using defaults.")
-    else:
-        save_config(config, filepath)
-        
-    return config
+            
+            self.config = DEFAULT_CONFIG.copy()
+            self._recursive_update(self.config, user_config)
+        except (json.JSONDecodeError, OSError):
+            self.config = DEFAULT_CONFIG.copy()
 
-def save_config(config: Dict[str, Any], filepath: str = "config.json") -> None:
-    """Save current configuration dictionary to a JSON file."""
-    try:
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=4)
-    except OSError as e:
-        print(f"Error: Could not save configuration to {filepath} ({e})")
+        return self.config
 
-def _deep_update(base_dict: Dict[str, Any], update_dict: Dict[str, Any]) -> None:
-    """Recursively update dictionary to preserve nested default settings."""
-    for key, value in update_dict.items():
-        if isinstance(value, dict) and key in base_dict and isinstance(base_dict[key], dict):
-            _deep_update(base_dict[key], value)
-        else:
-            base_dict[key] = value
+    def _recursive_update(self, base_dict: Dict[str, Any], update_dict: Dict[str, Any]) -> None:
+        """Recursively update nested dictionary structures."""
+        for key, value in update_dict.items():
+            if isinstance(value, dict) and key in base_dict and isinstance(base_dict[key], dict):
+                self._recursive_update(base_dict[key], value)
+            else:
+                base_dict[key] = value
+
+    def save_config(self) -> None:
+        """Saves current configuration to JSON file."""
+        with open(self.config_path, "w", encoding="utf-8") as f:
+            json.dump(self.config, f, indent=4)
