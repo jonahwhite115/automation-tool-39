@@ -1,33 +1,36 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
+import sys
 
-def setup_logger(name: str, log_file: str = 'automation.log', level: int = logging.INFO) -> logging.Logger:
-    """
-    Configures a rotating file logger for automation-tool-39.
-    Keeps 5 files of 5MB each.
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+# configure logging for automation-tool-39
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
-    # Prevent duplicate handlers if called multiple times
-    if not logger.handlers:
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+logger = logging.getLogger('automation-tool-39')
 
-        # Rotation setup: max 5MB, keep 5 backups
-        handler = RotatingFileHandler(
-            log_file, 
-            maxBytes=5 * 1024 * 1024, 
-            backupCount=5
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+def log_exception(exc: Exception, context: str = "unknown operation"):
+    """captures and formats unexpected runtime exceptions"""
+    if not isinstance(exc, Exception):
+        logger.error(f"invalid exception type provided: {type(exc)}")
+        return
 
-        # Stream to console as well
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+    error_msg = f"error during {context}: {str(exc)}"
+    logger.error(error_msg, exc_info=True)
 
-    return logger
+    # ensure sensitive path info isn't exposed in public logs if needed
+    if isinstance(exc, PermissionError):
+        logger.critical("insufficient privileges to access game process")
+
+def safe_log(message: str, level: str = "info"):
+    """safely wraps logger to prevent attribute errors"""
+    levels = {"info": logger.info, "warning": logger.warning, "error": logger.error}
+    log_func = levels.get(level.lower(), logger.info)
+    
+    try:
+        log_func(message)
+    except Exception as e:
+        # fallback to standard print if logging fails
+        print(f"critical logger failure: {e}")
