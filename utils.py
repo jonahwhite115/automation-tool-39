@@ -1,37 +1,51 @@
 import time
-import random
 import logging
+from functools import wraps
+from typing import Callable, Any, Tuple, Type
 
-# Configure basic logger for automation operations
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('automation-tool-39')
+logger = logging.getLogger("automation.utils")
 
-def sleep_randomly(min_sec: float = 1.0, max_sec: float = 3.0):
-    """Introduce human-like delays between automation actions."""
-    delay = random.uniform(min_sec, max_sec)
-    time.sleep(delay)
+def retry_network_op(
+    max_retries: int = 3,
+    delay: float = 1.0,
+    backoff_factor: float = 2.0,
+    exceptions: Tuple[Type[Exception], ...] = (Exception,)
+) -> Callable:
+    """
+    Decorator to retry network operations with exponential backoff.
+    Useful for game API requests, session heartbeats, and status checks.
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            current_delay = delay
+            for attempt in range(1, max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as err:
+                    if attempt == max_retries:
+                        logger.error(
+                            f"Network operation '{func.__name__}' failed after {max_retries} attempts: {err}"
+                        )
+                        raise
+                    logger.warning(
+                        f"Attempt {attempt}/{max_retries} for '{func.__name__}' failed ({err}). "
+                        f"Retrying in {current_delay:.1f}s..."
+                    )
+                    time.sleep(current_delay)
+                    current_delay *= backoff_factor
+        return wrapper
+    return decorator
 
-def retry_operation(func, retries: int = 3, delay: float = 2.0):
-    """Decorator-like utility for robust network or UI interaction."""
-    last_exception = None
-    for attempt in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            last_exception = e
-            logger.warning(f"Attempt {attempt + 1} failed: {e}")
-            time.sleep(delay)
-    raise last_exception
-
-def format_timestamp(ts: float) -> str:
-    """Convert epoch time to standard readable string format."""
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))
-
-def get_random_user_agent() -> str:
-    """Return a randomized user agent string for stealth."""
-    agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/91.0.4472",
-        "Mozilla/5.0 (X11; Linux x86_64) Firefox/89.0"
-    ]
-    return random.choice(agents)
+def safe_execute_network_call(
+    func: Callable,
+    *args: Any,
+    default_return: Any = None,
+    **kwargs: Any
+) -> Any:
+    """Executes a network operation safely, returning a default value on failure."""
+    try:
+        return func(*args, **kwargs)
+    except Exception as exc:
+        logger.error(f"Execution failed for gaming service call: {exc}")
+        return default_return
