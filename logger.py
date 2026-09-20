@@ -1,45 +1,36 @@
-import os
 import logging
 from logging.handlers import RotatingFileHandler
+import os
 
-def setup_logger(
-    name: str = "automation_tool",
-    log_file: str = "logs/automation.log",
-    max_bytes: int = 5 * 1024 * 1024,
-    backup_count: int = 5,
-    level: int = logging.INFO
-) -> logging.Logger:
-    """Configures and returns a logger with console and rotating file handlers."""
-    log_dir = os.path.dirname(log_file)
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
+def setup_logger(name='automation-tool-39', log_file='game_automation.log'):
+    """
+    Configures a rotating file logger for the automation tool.
+    Keeps 5 files of 5MB each to manage disk space.
+    """
     logger = logging.getLogger(name)
-    logger.setLevel(level)
+    logger.setLevel(logging.INFO)
 
-    # Prevent duplicate handlers if the logger is re-initialized
-    if logger.hasHandlers():
-        logger.handlers.clear()
+    # Prevent duplicate handlers if function is called multiple times
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
 
-    # Unified formatter for gaming automation logs
-    formatter = logging.Formatter(
-        fmt="%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d) - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+        # Rotation setup: 5MB max size per file, keep 5 backups
+        file_handler = RotatingFileHandler(
+            log_file, 
+            maxBytes=5 * 1024 * 1024, 
+            backupCount=5
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-    # Console output handler for live feedback
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    # Rotating file handler to prevent excessive disk usage
-    file_handler = RotatingFileHandler(
-        log_file,
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+        # Add console output for development visibility
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
     return logger
+
+# Global logger instance
+automation_logger = setup_logger()
