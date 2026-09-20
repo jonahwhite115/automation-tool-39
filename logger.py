@@ -1,36 +1,45 @@
-import logging
 import os
-import sys
+import logging
+from logging.handlers import RotatingFileHandler
 
-# configure logging for automation-tool-39
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
+def setup_logger(
+    name: str = "automation_tool",
+    log_file: str = "logs/automation.log",
+    max_bytes: int = 5 * 1024 * 1024,
+    backup_count: int = 5,
+    level: int = logging.INFO
+) -> logging.Logger:
+    """Configures and returns a logger with console and rotating file handlers."""
+    log_dir = os.path.dirname(log_file)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
 
-logger = logging.getLogger('automation-tool-39')
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-def log_exception(exc: Exception, context: str = "unknown operation"):
-    """captures and formats unexpected runtime exceptions"""
-    if not isinstance(exc, Exception):
-        logger.error(f"invalid exception type provided: {type(exc)}")
-        return
+    # Prevent duplicate handlers if the logger is re-initialized
+    if logger.hasHandlers():
+        logger.handlers.clear()
 
-    error_msg = f"error during {context}: {str(exc)}"
-    logger.error(error_msg, exc_info=True)
+    # Unified formatter for gaming automation logs
+    formatter = logging.Formatter(
+        fmt="%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d) - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
 
-    # ensure sensitive path info isn't exposed in public logs if needed
-    if isinstance(exc, PermissionError):
-        logger.critical("insufficient privileges to access game process")
+    # Console output handler for live feedback
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
-def safe_log(message: str, level: str = "info"):
-    """safely wraps logger to prevent attribute errors"""
-    levels = {"info": logger.info, "warning": logger.warning, "error": logger.error}
-    log_func = levels.get(level.lower(), logger.info)
-    
-    try:
-        log_func(message)
-    except Exception as e:
-        # fallback to standard print if logging fails
-        print(f"critical logger failure: {e}")
+    # Rotating file handler to prevent excessive disk usage
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+        encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    return logger
