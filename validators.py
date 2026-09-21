@@ -1,39 +1,32 @@
-from typing import Dict, Any, Union
+import time
+import functools
+import logging
 
-def validate_game_stats(data: Dict[str, Any]) -> bool:
-    """
-    Checks if the game data contains valid score and level fields.
-    Expects structure: {'score': int, 'level': int, 'player_id': str}
-    """
-    required_keys = {'score', 'level', 'player_id'}
-    
-    if not all(key in data for key in required_keys):
-        return False
+logger = logging.getLogger(__name__)
 
-    # Ensure values are within reasonable gaming bounds
-    if not isinstance(data['score'], int) or data['score'] < 0:
-        return False
+def retry_network_operation(max_retries=3, delay=2, backoff=2):
+    """Decorator to retry network operations with exponential backoff."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError) as e:
+                    if attempt == max_retries - 1:
+                        logger.error(f"Failed {func.__name__} after {max_retries} attempts.")
+                        raise e
+                    
+                    logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {current_delay}s...")
+                    time.sleep(current_delay)
+                    current_delay *= backoff
+            return None
+        return wrapper
+    return decorator
 
-    if not isinstance(data['level'], int) or not (0 < data['level'] < 999):
-        return False
-
-    return True
-
-def sanitize_player_input(input_val: Any) -> str:
-    """
-    Cleans player input to prevent injection in log files.
-    """
-    clean_val = str(input_val).replace("\n", "").replace("\r", "")
-    return clean_val[:128]
-
-def calculate_ranking_tier(score: int) -> str:
-    """
-    Determines player tier based on score threshold.
-    """
-    if score > 10000:
-        return "legendary"
-    elif score > 5000:
-        return "diamond"
-    elif score > 1000:
-        return "gold"
-    return "bronze"
+@retry_network_operation(max_retries=3)
+def fetch_game_data(endpoint: str):
+    """Simulated network call for gaming data."""
+    # Actual network implementation goes here
+    return {"status": "success"}
