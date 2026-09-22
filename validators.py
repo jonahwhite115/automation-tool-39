@@ -1,32 +1,36 @@
-import time
-import functools
 import logging
 
 logger = logging.getLogger(__name__)
 
-def retry_network_operation(max_retries=3, delay=2, backoff=2):
-    """Decorator to retry network operations with exponential backoff."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            current_delay = delay
-            for attempt in range(max_retries):
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    if attempt == max_retries - 1:
-                        logger.error(f"Failed {func.__name__} after {max_retries} attempts.")
-                        raise e
-                    
-                    logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {current_delay}s...")
-                    time.sleep(current_delay)
-                    current_delay *= backoff
-            return None
-        return wrapper
-    return decorator
+def validate_game_config(config: dict) -> bool:
+    """Validates game automation settings with robust error handling."""
+    required_keys = ['game_id', 'click_delay', 'loop_count']
+    
+    try:
+        if not isinstance(config, dict):
+            raise ValueError("Configuration must be a dictionary")
+            
+        for key in required_keys:
+            if key not in config:
+                raise KeyError(f"Missing required config key: {key}")
+        
+        if not isinstance(config['click_delay'], (int, float)) or config['click_delay'] < 0:
+            raise ValueError("click_delay must be a non-negative number")
+            
+        if not isinstance(config['loop_count'], int) or config['loop_count'] < -1:
+            raise ValueError("loop_count must be an integer or -1 for infinite")
+            
+        return True
+        
+    except (KeyError, ValueError, TypeError) as e:
+        logger.error(f"Configuration validation failure: {e}")
+        return False
+    except Exception as e:
+        logger.critical(f"Unexpected error during validation: {e}")
+        return False
 
-@retry_network_operation(max_retries=3)
-def fetch_game_data(endpoint: str):
-    """Simulated network call for gaming data."""
-    # Actual network implementation goes here
-    return {"status": "success"}
+def sanitize_input(value: str) -> str:
+    """Ensures input strings are safe for CLI execution."""
+    if not isinstance(value, str):
+        return ""
+    return value.strip().replace(';', '').replace('&', '')
