@@ -1,64 +1,39 @@
-from typing import Dict, List, Any, Optional
+import logging
 
-class MatchDataHandler:
-    """Utility for processing and aggregating multiplayer game match data."""
+logger = logging.getLogger(__name__)
 
-    def __init__(self, match_id: str):
-        self.match_id = match_id
-        self.players: List[Dict[str, Any]] = []
+class AutomationHandler:
+    """Handles gaming automation tasks with robustness."""
 
-    def add_player_performance(self, username: str, kills: int, deaths: int, assists: int, score: int) -> None:
-        """Adds a player's statistics to the current match."""
-        self.players.append({
-            "username": username,
-            "kills": max(0, kills),
-            "deaths": max(0, deaths),
-            "assists": max(0, assists),
-            "score": max(0, score)
-        })
+    def __init__(self, retry_limit=3):
+        self.retry_limit = retry_limit
 
-    def calculate_kda(self, player_stats: Dict[str, Any]) -> float:
-        """Calculates Kill-Death-Assist ratio with weighted assists."""
-        deaths = player_stats["deaths"]
-        if deaths == 0:
-            return float(player_stats["kills"] + player_stats["assists"])
-        return round((player_stats["kills"] + (player_stats["assists"] * 0.5)) / deaths, 2)
+    def execute_action(self, action_func, *args, **kwargs):
+        """Executes a game action with edge case error handling."""
+        attempts = 0
+        while attempts < self.retry_limit:
+            try:
+                return action_func(*args, **kwargs)
+            except ConnectionError as e:
+                attempts += 1
+                logger.warning(f"Connection issue on attempt {attempts}: {e}")
+                if attempts >= self.retry_limit:
+                    logger.error("Max retries reached for connection.")
+                    raise
+            except ValueError as e:
+                logger.error(f"Invalid data input: {e}")
+                break
+            except Exception as e:
+                logger.critical(f"Unexpected automation failure: {e}")
+                break
+        return None
 
-    def determine_mvp(self) -> Optional[str]:
-        """Identifies the MVP based on kills, assists, score, and deaths."""
-        if not self.players:
-            return None
-
-        best_performance = -1.0
-        mvp_name = None
-
-        for player in self.players:
-            perf_score = (
-                player["kills"] * 1.5 +
-                player["assists"] * 0.75 +
-                (player["score"] / 100.0) -
-                (player["deaths"] * 0.5)
-            )
-            if perf_score > best_performance:
-                best_performance = perf_score
-                mvp_name = player["username"]
-
-        return mvp_name
-
-    def get_match_summary(self) -> Dict[str, Any]:
-        """Returns aggregated statistics for the entire match."""
-        if not self.players:
-            return {"match_id": self.match_id, "total_players": 0, "mvp": None}
-
-        total_kills = sum(p["kills"] for p in self.players)
-        total_deaths = sum(p["deaths"] for p in self.players)
-        mvp = self.determine_mvp()
-
-        return {
-            "match_id": self.match_id,
-            "total_players": len(self.players),
-            "total_kills": total_kills,
-            "total_deaths": total_deaths,
-            "mvp": mvp,
-            "average_kda": round(sum(self.calculate_kda(p) for p in self.players) / len(self.players), 2)
-        }
+    def validate_game_state(self, state_data):
+        """Ensures game state data is safe for processing."""
+        if not isinstance(state_data, dict):
+            logger.error("Received non-dictionary state data.")
+            return False
+        if "player_id" not in state_data or state_data["player_id"] is None:
+            logger.error("Missing critical player identifier.")
+            return False
+        return True
