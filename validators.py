@@ -1,36 +1,28 @@
-import logging
+import re
 
-logger = logging.getLogger(__name__)
+def validate_game_input(input_data: str) -> bool:
+    """Validates game command syntax before processing."""
+    # Matches alphanumeric game commands and coordinates
+    # Example valid: 'move 10,20', 'attack player1'
+    pattern = r'^[a-z]+(?:\s[a-zA-Z0-9,]+)?$'
+    return bool(re.match(pattern, input_data.strip().lower()))
 
-def validate_game_config(config: dict) -> bool:
-    """Validates game automation settings with robust error handling."""
-    required_keys = ['game_id', 'click_delay', 'loop_count']
+def sanitize_input(input_data: str) -> str:
+    """Removes potential injection characters."""
+    return re.sub(r'[^a-zA-Z0-9, ]', '', input_data).strip()
+
+def process_main_loop():
+    """
+    Simulates processing loop with integrated validation.
+    """
+    inputs = ['move 10,20', 'invalid!cmd', 'attack boss', 'wait 5']
     
-    try:
-        if not isinstance(config, dict):
-            raise ValueError("Configuration must be a dictionary")
-            
-        for key in required_keys:
-            if key not in config:
-                raise KeyError(f"Missing required config key: {key}")
-        
-        if not isinstance(config['click_delay'], (int, float)) or config['click_delay'] < 0:
-            raise ValueError("click_delay must be a non-negative number")
-            
-        if not isinstance(config['loop_count'], int) or config['loop_count'] < -1:
-            raise ValueError("loop_count must be an integer or -1 for infinite")
-            
-        return True
-        
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Configuration validation failure: {e}")
-        return False
-    except Exception as e:
-        logger.critical(f"Unexpected error during validation: {e}")
-        return False
+    for cmd in inputs:
+        if validate_game_input(cmd):
+            clean_cmd = sanitize_input(cmd)
+            print(f"Processing: {clean_cmd}")
+        else:
+            print(f"Discarding invalid input: {cmd}")
 
-def sanitize_input(value: str) -> str:
-    """Ensures input strings are safe for CLI execution."""
-    if not isinstance(value, str):
-        return ""
-    return value.strip().replace(';', '').replace('&', '')
+if __name__ == '__main__':
+    process_main_loop()
