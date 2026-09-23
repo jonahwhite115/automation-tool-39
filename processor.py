@@ -1,47 +1,39 @@
+import functools
 import time
-from typing import Dict, Any, List, Optional
-from logger import setup_logger
+from typing import Callable, Any
 
-logger = setup_logger("processor")
+# Cache for compute-intensive coordinate calculations
+_coordinate_cache = {}
 
+def memoize_coords(func: Callable) -> Callable:
+    """Decorator for caching repetitive spatial calculations."""
+    @functools.wraps(func)
+    def wrapper(*args: Any) -> Any:
+        if args not in _coordinate_cache:
+            _coordinate_cache[args] = func(*args)
+        return _coordinate_cache[args]
+    return wrapper
 
-class ActionProcessor:
-    """Processes and dispatches gaming macro actions cleanly."""
+class DataProcessor:
+    def __init__(self, buffer_size: int = 1024):
+        self.buffer_size = buffer_size
+        self.processed_count = 0
 
-    def __init__(self, execution_delay: float = 0.05) -> None:
-        self.execution_delay = execution_delay
-        self._action_queue: List[Dict[str, Any]] = []
+    @memoize_coords
+    def calculate_offset(self, x: int, y: int, depth: int) -> tuple:
+        """Complex math for gaming viewport rendering."""
+        time.sleep(0.001)  # Simulate heavy CPU load
+        return (x * depth, y * depth)
 
-    def queue_action(self, action_type: str, payload: Dict[str, Any]) -> None:
-        """Enqueue a new action for execution."""
-        event = {"type": action_type, "data": payload, "timestamp": time.time()}
-        self._action_queue.append(event)
-        logger.debug(f"Action queued: {action_type}")
+    def batch_process(self, data_points: list) -> list:
+        """Optimized batch processing using list comprehension."""
+        results = [
+            self.calculate_offset(p[0], p[1], p[2]) 
+            for p in data_points
+        ]
+        self.processed_count += len(results)
+        return results
 
-    def clear_queue(self) -> int:
-        """Purge pending actions from the queue."""
-        count = len(self._action_queue)
-        self._action_queue.clear()
-        logger.info(f"Cleared {count} pending actions")
-        return count
-
-    def process_next(self) -> Optional[Dict[str, Any]]:
-        """Process the next action in the queue."""
-        if not self._action_queue:
-            return None
-
-        action = self._action_queue.pop(0)
-        action_type = action.get("type")
-        payload = action.get("data", {})
-
-        if action_type == "key_press":
-            key = payload.get("key", "unknown")
-            logger.info(f"Simulating key press: {key}")
-        elif action_type == "mouse_click":
-            x, y = payload.get("x", 0), payload.get("y", 0)
-            logger.info(f"Simulating mouse click at ({x}, {y})")
-        else:
-            logger.warning(f"Unknown action type: {action_type}")
-
-        time.sleep(self.execution_delay)
-        return action
+    def clear_cache(self) -> None:
+        """Manual cache invalidation for memory management."""
+        _coordinate_cache.clear()
