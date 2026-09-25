@@ -1,39 +1,28 @@
-import logging
+import json
+from typing import Dict, Any, Optional
 
-logger = logging.getLogger(__name__)
-
-class AutomationHandler:
-    """Handles gaming automation tasks with robustness."""
-
-    def __init__(self, retry_limit=3):
-        self.retry_limit = retry_limit
-
-    def execute_action(self, action_func, *args, **kwargs):
-        """Executes a game action with edge case error handling."""
-        attempts = 0
-        while attempts < self.retry_limit:
-            try:
-                return action_func(*args, **kwargs)
-            except ConnectionError as e:
-                attempts += 1
-                logger.warning(f"Connection issue on attempt {attempts}: {e}")
-                if attempts >= self.retry_limit:
-                    logger.error("Max retries reached for connection.")
-                    raise
-            except ValueError as e:
-                logger.error(f"Invalid data input: {e}")
-                break
-            except Exception as e:
-                logger.critical(f"Unexpected automation failure: {e}")
-                break
+def parse_game_session(raw_data: str) -> Optional[Dict[str, Any]]:
+    """Parses raw JSON game session strings into valid dictionaries."""
+    try:
+        data = json.loads(raw_data)
+        if isinstance(data, dict) and 'session_id' in data:
+            return data
+        return None
+    except (json.JSONDecodeError, TypeError):
         return None
 
-    def validate_game_state(self, state_data):
-        """Ensures game state data is safe for processing."""
-        if not isinstance(state_data, dict):
-            logger.error("Received non-dictionary state data.")
-            return False
-        if "player_id" not in state_data or state_data["player_id"] is None:
-            logger.error("Missing critical player identifier.")
-            return False
-        return True
+def sanitize_player_metrics(metrics: Dict[str, Any]) -> Dict[str, float]:
+    """Converts all numerical values in metrics to standard floats."""
+    sanitized = {}
+    for key, value in metrics.items():
+        try:
+            sanitized[key] = float(value)
+        except (ValueError, TypeError):
+            continue
+    return sanitized
+
+def format_session_summary(session_data: Dict[str, Any]) -> str:
+    """Creates a human-readable summary from session dictionary."""
+    sid = session_data.get('session_id', 'unknown')
+    score = session_data.get('score', 0)
+    return f"Session {sid} ended with score {score}"
