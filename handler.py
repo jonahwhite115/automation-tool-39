@@ -1,28 +1,35 @@
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, List, Any, Optional
 
-def parse_game_session(raw_data: str) -> Optional[Dict[str, Any]]:
-    """Parses raw JSON game session strings into valid dictionaries."""
+def parse_game_data(raw_data: str) -> Optional[Dict[str, Any]]:
+    """Parses gaming JSON strings and validates structure."""
     try:
         data = json.loads(raw_data)
-        if isinstance(data, dict) and 'session_id' in data:
-            return data
-        return None
+        if not isinstance(data, dict) or "player_id" not in data:
+            return None
+        return data
     except (json.JSONDecodeError, TypeError):
         return None
 
-def sanitize_player_metrics(metrics: Dict[str, Any]) -> Dict[str, float]:
-    """Converts all numerical values in metrics to standard floats."""
-    sanitized = {}
-    for key, value in metrics.items():
-        try:
-            sanitized[key] = float(value)
-        except (ValueError, TypeError):
-            continue
-    return sanitized
+def calculate_stat_averages(sessions: List[Dict[str, Any]]) -> Dict[str, float]:
+    """Aggregates performance metrics from session list."""
+    if not sessions:
+        return {"avg_score": 0.0, "avg_latency": 0.0}
+    
+    total_score = sum(s.get("score", 0) for s in sessions)
+    total_latency = sum(s.get("latency", 0) for s in sessions)
+    count = len(sessions)
+    
+    return {
+        "avg_score": total_score / count,
+        "avg_latency": total_latency / count
+    }
 
-def format_session_summary(session_data: Dict[str, Any]) -> str:
-    """Creates a human-readable summary from session dictionary."""
-    sid = session_data.get('session_id', 'unknown')
-    score = session_data.get('score', 0)
-    return f"Session {sid} ended with score {score}"
+def format_player_payload(player_id: str, stats: Dict[str, Any]) -> str:
+    """Serializes processed stats for transmission."""
+    payload = {
+        "player_id": player_id,
+        "metrics": stats,
+        "status": "processed"
+    }
+    return json.dumps(payload)
