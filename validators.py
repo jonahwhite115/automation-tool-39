@@ -1,32 +1,42 @@
-import functools
-import logging
+from typing import List, Optional, Union
 
-# Configure logger for performance metrics
-logger = logging.getLogger('automation-tool-39')
+def validate_game_config(config: dict) -> bool:
+    """
+    Validates the mandatory configuration fields for the gaming automation tool.
 
-_CACHE_SIZE = 1024
+    Args:
+        config: A dictionary containing game settings like paths and resolutions.
 
-def validate_game_state(func):
-    """Decorator to cache game state validation results."""
-    @functools.lru_cache(maxsize=_CACHE_SIZE)
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    return wrapper
+    Returns:
+        True if the configuration is valid, False otherwise.
+    """
+    required_keys: List[str] = ["game_path", "resolution", "fps_limit"]
+    return all(key in config for key in required_keys)
 
-@validate_game_state
-def verify_entity_bounds(entity_id: int, coordinates: tuple) -> bool:
-    """Validates entity presence using cached lookups."""
-    # Simulation of computationally expensive coordinate validation
-    x, y, z = coordinates
-    if not all(isinstance(val, (int, float)) for val in coordinates):
-        return False
-    return 0 <= x <= 1000 and 0 <= y <= 1000 and 0 <= z <= 1000
+def sanitize_input(value: Union[str, int]) -> str:
+    """
+    Cleans and prepares input strings for the automation engine.
 
-def bulk_process_validation(entities: list) -> list:
-    """Efficient validation sequence for batch entity checks."""
-    results = []
-    for eid, coords in entities:
-        # Utilization of cached validation logic
-        results.append(verify_entity_bounds(eid, coords))
-    return results
+    Args:
+        value: The raw input value from the user or configuration file.
+
+    Returns:
+        A stripped and lowercase version of the input string.
+    """
+    return str(value).strip().lower()
+
+def check_threshold(value: float, min_val: float, max_val: Optional[float] = None) -> bool:
+    """
+    Checks if a numeric metric falls within an allowed gaming range.
+
+    Args:
+        value: The current metric to validate.
+        min_val: The minimum allowed threshold.
+        max_val: The maximum allowed threshold (optional).
+
+    Returns:
+        True if value is within bounds, False otherwise.
+    """
+    if max_val is not None:
+        return min_val <= value <= max_val
+    return value >= min_val
