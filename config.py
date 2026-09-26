@@ -1,60 +1,50 @@
 import json
-import os
+from pathlib import Path
 from typing import Any, Dict
 
 DEFAULT_CONFIG: Dict[str, Any] = {
     "screen_resolution": [1920, 1080],
-    "click_delay_ms": 100,
-    "max_retries": 3,
-    "debug_mode": False,
-    "keybinds": {
-        "start": "F10",
-        "stop": "F11",
-        "pause": "F12"
-    },
-    "target_game": "Default_RPG"
+    "click_delay_seconds": 0.1,
+    "keybind_start": "F9",
+    "keybind_stop": "F12",
+    "active_profile": "default_rpg",
+    "retry_attempts": 3,
+    "verbose_logging": False
 }
 
 class ConfigLoader:
-    def __init__(self, filepath: str = "config.json"):
-        self.filepath = filepath
-        self.config = self._load_config()
+    """Handles loading, merging, and saving configuration for the gaming automation tool."""
 
-    def _load_config(self) -> Dict[str, Any]:
-        """Loads configuration file, merging with default values."""
-        if not os.path.exists(self.filepath):
-            self._save_config(DEFAULT_CONFIG)
-            return DEFAULT_CONFIG.copy()
+    def __init__(self, config_path: str = "config.json"):
+        self.config_path = Path(config_path)
+        self.config: Dict[str, Any] = self.load_config()
 
+    def load_config(self) -> Dict[str, Any]:
+        """Loads config from file, merging with defaults for any missing keys."""
+        merged_config = DEFAULT_CONFIG.copy()
+
+        if self.config_path.exists():
+            try:
+                with open(self.config_path, "r", encoding="utf-8") as file:
+                    user_config = json.load(file)
+                    if isinstance(user_config, dict):
+                        merged_config.update(user_config)
+            except (json.JSONDecodeError, OSError):
+                # Fallback to defaults on corrupted or unreadable configuration file
+                pass
+        else:
+            self.save_config(merged_config)
+
+        return merged_config
+
+    def save_config(self, config_data: Dict[str, Any]) -> None:
+        """Saves the configuration dictionary to the designated file path."""
         try:
-            with open(self.filepath, "r", encoding="utf-8") as f:
-                user_config = json.load(f)
-            
-            # Merge loaded configurations with the defaults
-            merged = DEFAULT_CONFIG.copy()
-            for key, value in user_config.items():
-                if isinstance(value, dict) and key in merged and isinstance(merged[key], dict):
-                    merged[key].update(value)
-                else:
-                    merged[key] = value
-            return merged
-        except (json.JSONDecodeError, IOError):
-            # Fallback to default copy in case of read errors
-            return DEFAULT_CONFIG.copy()
-
-    def _save_config(self, data: Dict[str, Any]) -> None:
-        """Helper to persist configuration data to a file."""
-        try:
-            with open(self.filepath, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-        except IOError:
+            with open(self.config_path, "w", encoding="utf-8") as file:
+                json.dump(config_data, file, indent=4)
+        except OSError:
             pass
 
-    def get(self, key: str, default: Any = None) -> Any:
-        """Retrieve a configuration value by its key."""
-        return self.config.get(key, default)
-
-    def update_key(self, key: str, value: Any) -> None:
-        """Updates a config setting and immediately persists it to disk."""
-        self.config[key] = value
-        self._save_config(self.config)
+    def get(self, key: str) -> Any:
+        """Retrieves a configuration value by its key with fallback safety."""
+        return self.config.get(key, DEFAULT_CONFIG.get(key))
