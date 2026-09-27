@@ -1,42 +1,27 @@
-from typing import List, Optional, Union
+import re
 
 def validate_game_config(config: dict) -> bool:
-    """
-    Validates the mandatory configuration fields for the gaming automation tool.
+    """Validates required keys and value formats for game profiles."""
+    required_keys = ['game_id', 'executable_path', 'settings']
+    if not all(key in config for key in required_keys):
+        return False
+    
+    # Validate game_id format (alphanumeric underscore)
+    if not re.match(r'^[a-zA-Z0-9_]+$', str(config['game_id'])):
+        return False
+    
+    # Validate executable path existence mock check
+    if not config['executable_path'].endswith(('.exe', '.bat', '.sh')):
+        return False
+        
+    return True
 
-    Args:
-        config: A dictionary containing game settings like paths and resolutions.
+def sanitize_input(user_input: str) -> str:
+    """Cleans user input to prevent injection or errors."""
+    return re.sub(r'[^a-zA-Z0-9\s]', '', user_input).strip()
 
-    Returns:
-        True if the configuration is valid, False otherwise.
-    """
-    required_keys: List[str] = ["game_path", "resolution", "fps_limit"]
-    return all(key in config for key in required_keys)
-
-def sanitize_input(value: Union[str, int]) -> str:
-    """
-    Cleans and prepares input strings for the automation engine.
-
-    Args:
-        value: The raw input value from the user or configuration file.
-
-    Returns:
-        A stripped and lowercase version of the input string.
-    """
-    return str(value).strip().lower()
-
-def check_threshold(value: float, min_val: float, max_val: Optional[float] = None) -> bool:
-    """
-    Checks if a numeric metric falls within an allowed gaming range.
-
-    Args:
-        value: The current metric to validate.
-        min_val: The minimum allowed threshold.
-        max_val: The maximum allowed threshold (optional).
-
-    Returns:
-        True if value is within bounds, False otherwise.
-    """
-    if max_val is not None:
-        return min_val <= value <= max_val
-    return value >= min_val
+def validate_session_token(token: str) -> bool:
+    """Checks token length and complexity for session integrity."""
+    if len(token) < 32:
+        return False
+    return True
