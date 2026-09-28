@@ -1,27 +1,25 @@
-import re
+class ValidationError(Exception):
+    """Custom exception for input validation failures in gaming automation."""
+    pass
 
-def validate_game_config(config: dict) -> bool:
-    """Validates required keys and value formats for game profiles."""
-    required_keys = ['game_id', 'executable_path', 'settings']
-    if not all(key in config for key in required_keys):
-        return False
+def validate_game_input(data: dict, required_keys: list):
+    """Checks if input data contains all mandatory keys and valid types."""
+    for key in required_keys:
+        if key not in data:
+            raise ValidationError(f"Missing required key: {key}")
     
-    # Validate game_id format (alphanumeric underscore)
-    if not re.match(r'^[a-zA-Z0-9_]+$', str(config['game_id'])):
-        return False
+    if not isinstance(data.get('action_delay'), (int, float)):
+        raise ValidationError("Invalid action_delay: must be numeric")
     
-    # Validate executable path existence mock check
-    if not config['executable_path'].endswith(('.exe', '.bat', '.sh')):
-        return False
-        
-    return True
+    if data.get('action_delay', 0) < 0:
+        raise ValidationError("Action delay cannot be negative")
 
 def sanitize_input(user_input: str) -> str:
-    """Cleans user input to prevent injection or errors."""
-    return re.sub(r'[^a-zA-Z0-9\s]', '', user_input).strip()
+    """Removes non-alphanumeric characters to prevent injection issues."""
+    return ''.join(char for char in user_input if char.isalnum())
 
-def validate_session_token(token: str) -> bool:
-    """Checks token length and complexity for session integrity."""
-    if len(token) < 32:
-        return False
-    return True
+def validate_coordinate_range(x: int, y: int, bounds: tuple):
+    """Ensures screen coordinates remain within game window bounds."""
+    width, height = bounds
+    if not (0 <= x <= width and 0 <= y <= height):
+        raise ValidationError(f"Coordinates ({x}, {y}) outside screen bounds")
