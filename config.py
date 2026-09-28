@@ -1,32 +1,46 @@
-import json
 import os
-from typing import Any, Dict
+import json
+import logging
 
-DEFAULT_CONFIG = {
-    "fps_limit": 60,
-    "auto_loot": True,
-    "macro_delay": 0.5,
-    "window_name": "GameWindow"
-}
+logger = logging.getLogger(__name__)
 
-def load_config(file_path: str = "config.json") -> Dict[str, Any]:
-    """Loads configuration from JSON file or returns default."""
-    config = DEFAULT_CONFIG.copy()
-    
-    if os.path.exists(file_path):
+class ConfigManager:
+    """Handles loading and validation of game automation settings."""
+
+    def __init__(self, file_path='config.json'):
+        self.file_path = file_path
+        self.settings = {}
+
+    def load_config(self):
+        """Attempts to load configuration from disk with fallback."""
         try:
-            with open(file_path, "r") as f:
-                user_config = json.load(f)
-                config.update(user_config)
-        except (json.JSONDecodeError, IOError):
-            pass
+            if not os.path.exists(self.file_path):
+                raise FileNotFoundError(f"Configuration file {self.file_path} missing.")
             
-    return config
+            with open(self.file_path, 'r') as f:
+                self.settings = json.load(f)
+                
+        except (json.JSONDecodeError, IOError) as e:
+            logger.error(f"Critical config error: {e}. Reverting to defaults.")
+            self.settings = self._get_defaults()
+        except Exception as e:
+            logger.critical(f"Unexpected initialization failure: {e}")
+            self.settings = self._get_defaults()
+        
+        return self.settings
 
-def save_config(config: Dict[str, Any], file_path: str = "config.json") -> None:
-    """Persists current configuration state to disk."""
-    try:
-        with open(file_path, "w") as f:
-            json.dump(config, f, indent=4)
-    except IOError:
-        pass
+    def _get_defaults(self):
+        """Provides baseline safe settings for tool execution."""
+        return {
+            "fps_limit": 60,
+            "auto_click": False,
+            "macro_path": "./macros/default.json"
+        }
+
+def validate_settings(settings):
+    """Ensures configuration values are within game-safe bounds."""
+    if not isinstance(settings.get('fps_limit'), int):
+        return False
+    if not (1 <= settings.get('fps_limit', 0) <= 240):
+        return False
+    return True
