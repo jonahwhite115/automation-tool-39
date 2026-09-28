@@ -3,36 +3,30 @@ import os
 from typing import Any, Dict
 
 DEFAULT_CONFIG = {
-    "window_width": 1920,
-    "window_height": 1080,
-    "polling_rate_ms": 50,
-    "debug_mode": False,
-    "target_process": "game.exe"
+    "fps_limit": 60,
+    "auto_loot": True,
+    "macro_delay": 0.5,
+    "window_name": "GameWindow"
 }
 
-class ConfigLoader:
-    """Handles loading and merging of automation tool settings."""
-
-    def __init__(self, config_path: str = "config.json"):
-        self.config_path = config_path
-
-    def load(self) -> Dict[str, Any]:
-        """Loads config from file with fallback to defaults."""
-        if not os.path.exists(self.config_path):
-            return DEFAULT_CONFIG.copy()
-
+def load_config(file_path: str = "config.json") -> Dict[str, Any]:
+    """Loads configuration from JSON file or returns default."""
+    config = DEFAULT_CONFIG.copy()
+    
+    if os.path.exists(file_path):
         try:
-            with open(self.config_path, "r") as f:
+            with open(file_path, "r") as f:
                 user_config = json.load(f)
-            
-            # Merge defaults with user settings
-            config = DEFAULT_CONFIG.copy()
-            config.update(user_config)
-            return config
+                config.update(user_config)
         except (json.JSONDecodeError, IOError):
-            return DEFAULT_CONFIG.copy()
+            pass
+            
+    return config
 
-    def save(self, config: Dict[str, Any]) -> None:
-        """Persists current configuration state to disk."""
-        with open(self.config_path, "w") as f:
+def save_config(config: Dict[str, Any], file_path: str = "config.json") -> None:
+    """Persists current configuration state to disk."""
+    try:
+        with open(file_path, "w") as f:
             json.dump(config, f, indent=4)
+    except IOError:
+        pass
