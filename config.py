@@ -1,46 +1,59 @@
-import os
 import json
-import logging
+import os
+from typing import Any, Dict
 
-logger = logging.getLogger(__name__)
+DEFAULT_CONFIG: Dict[str, Any] = {
+    "target_fps": 60,
+    "scan_interval_ms": 100,
+    "hotkeys": {
+        "start": "f10",
+        "stop": "f11",
+        "screenshot": "f12"
+    },
+    "detection_threshold": 0.85,
+    "game_window_title": "GameClient",
+    "debug_mode": False
+}
 
-class ConfigManager:
-    """Handles loading and validation of game automation settings."""
+class ConfigLoader:
+    """Loads and manages gaming automation configuration with default fallback values."""
 
-    def __init__(self, file_path='config.json'):
-        self.file_path = file_path
-        self.settings = {}
+    def __init__(self, config_path: str = "config.json"):
+        self.config_path = config_path
+        self.config = DEFAULT_CONFIG.copy()
+        self.load()
 
-    def load_config(self):
-        """Attempts to load configuration from disk with fallback."""
+    def load(self) -> None:
+        """Loads configuration from file and merges it with defaults."""
+        if not os.path.exists(self.config_path):
+            self.save()  # Create default config file if it does not exist
+            return
+
         try:
-            if not os.path.exists(self.file_path):
-                raise FileNotFoundError(f"Configuration file {self.file_path} missing.")
-            
-            with open(self.file_path, 'r') as f:
-                self.settings = json.load(f)
-                
-        except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"Critical config error: {e}. Reverting to defaults.")
-            self.settings = self._get_defaults()
-        except Exception as e:
-            logger.critical(f"Unexpected initialization failure: {e}")
-            self.settings = self._get_defaults()
-        
-        return self.settings
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                user_config = json.load(f)
+                if isinstance(user_config, dict):
+                    self._merge_dicts(self.config, user_config)
+        except (json.JSONDecodeError, OSError):
+            # Falls back to default on parse or read errors
+            pass
 
-    def _get_defaults(self):
-        """Provides baseline safe settings for tool execution."""
-        return {
-            "fps_limit": 60,
-            "auto_click": False,
-            "macro_path": "./macros/default.json"
-        }
+    def _merge_dicts(self, base: Dict[str, Any], update: Dict[str, Any]) -> None:
+        """Recursively merges custom updates into the base configuration."""
+        for key, val in update.items():
+            if isinstance(val, dict) and key in base and isinstance(base[key], dict):
+                self._merge_dicts(base[key], val)
+            else:
+                base[key] = val
 
-def validate_settings(settings):
-    """Ensures configuration values are within game-safe bounds."""
-    if not isinstance(settings.get('fps_limit'), int):
-        return False
-    if not (1 <= settings.get('fps_limit', 0) <= 240):
-        return False
-    return True
+    def get(self, key: str, default: Any = None) -> Any:
+        """Retrieves a nested or top-level configuration value."""
+        return self.config.get(key, default)
+
+    def save(self) -> None:
+        """Persists current configuration state to disk."""
+        try:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=4)
+        except OSError:
+            pass
