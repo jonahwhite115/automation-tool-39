@@ -1,36 +1,48 @@
-import logging
-import os
-from typing import Optional
+import math
+from typing import Dict, Any, List
 
-# Logging configuration for automation-tool-39
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('automation-tool-39')
 
-def validate_path(path: str) -> bool:
-    """Verify file system access for game assets."""
-    return os.path.exists(path) and os.access(path, os.R_OK)
+def calculate_level_from_xp(xp: int, base_xp: int = 100, exponent: float = 1.5) -> int:
+    """
+    Calculates the player level based on total XP using an exponential curve.
+    """
+    if xp < 0:
+        raise ValueError("XP cannot be negative")
+    if xp == 0:
+        return 1
+    # Level = (XP / base_xp)^(1/exponent) + 1
+    return int(math.pow(xp / base_xp, 1 / exponent)) + 1
 
-def get_environment_variable(key: str, default: Optional[str] = None) -> str:
-    """Retrieve system settings with fallback."""
-    value = os.getenv(key, default)
-    if not value:
-        logger.warning(f"Missing expected environment variable: {key}")
-    return value or ""
 
-def format_game_timestamp(raw_time: float) -> str:
-    """Convert engine time into human readable format."""
-    seconds = int(raw_time % 60)
-    minutes = int((raw_time // 60) % 60)
-    hours = int(raw_time // 3600)
-    return f"{hours:02}:{minutes:02}:{seconds:02}"
+def calculate_xp_for_level(level: int, base_xp: int = 100, exponent: float = 1.5) -> int:
+    """
+    Calculates the minimum cumulative XP required to reach a specific level.
+    """
+    if level <= 1:
+        return 0
+    return int(base_xp * math.pow(level - 1, exponent))
 
-def clean_cache_directory(dir_path: str) -> None:
-    """Removal of temporary game artifact files."""
-    try:
-        for item in os.listdir(dir_path):
-            item_path = os.path.join(dir_path, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-        logger.info(f"Cache cleared at {dir_path}")
-    except OSError as e:
-        logger.error(f"Failed to clean cache: {e}")
+
+def filter_items_by_rarity(inventory: List[Dict[str, Any]], min_rarity: str) -> List[Dict[str, Any]]:
+    """
+    Filters a list of inventory items by a minimum rarity threshold.
+    Rarity hierarchy: common < uncommon < rare < epic < legendary
+    """
+    rarity_ranks = {
+        "common": 1,
+        "uncommon": 2,
+        "rare": 3,
+        "epic": 4,
+        "legendary": 5
+    }
+
+    min_rank = rarity_ranks.get(min_rarity.lower(), 1)
+    filtered_items = []
+
+    for item in inventory:
+        item_rarity = item.get("rarity", "common").lower()
+        current_rank = rarity_ranks.get(item_rarity, 1)
+        if current_rank >= min_rank:
+            filtered_items.append(item)
+
+    return filtered_items
