@@ -1,35 +1,45 @@
 import logging
-from logging.handlers import RotatingFileHandler
 import os
+from datetime import datetime
 
-def setup_logger(name: str, log_file: str = 'automation.log', level: int = logging.INFO):
-    """Initializes a rotating file logger for automation-tool-39."""
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+class AutomationLogger:
+    """Handles application logging with edge case safety."""
 
-    # Prevent duplicate handlers if re-initialized
-    if not logger.handlers:
-        # Ensure log directory exists
-        os.makedirs('logs', exist_ok=True)
-        log_path = os.path.join('logs', log_file)
+    def __init__(self, log_dir: str = "logs"):
+        self.log_dir = log_dir
+        self._ensure_log_directory()
+        self.logger = logging.getLogger("automation-tool-39")
+        self._configure_logger()
 
-        # 5MB per file, keep 5 backups
-        handler = RotatingFileHandler(
-            log_path, maxBytes=5*1024*1024, backupCount=5
-        )
+    def _ensure_log_directory(self) -> None:
+        """Create directory if missing, handle permission edge cases."""
+        try:
+            if not os.path.exists(self.log_dir):
+                os.makedirs(self.log_dir, exist_ok=True)
+        except OSError as e:
+            print(f"Critical: Failed to create log directory: {e}")
+
+    def _configure_logger(self) -> None:
+        """Standard file logging setup with basic formatting."""
+        self.logger.setLevel(logging.INFO)
+        log_path = os.path.join(self.log_dir, f"run_{datetime.now().strftime('%Y%m%d')}.log")
         
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        try:
+            handler = logging.FileHandler(log_path)
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+        except (PermissionError, IOError) as e:
+            print(f"Warning: Logger file inaccessible: {e}")
 
-        # Stream logs to console as well
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+    def log_error(self, message: str, exc: Exception = None) -> None:
+        """Safe logging of errors with exception detail."""
+        if exc:
+            self.logger.error(f"{message}: {str(exc)}", exc_info=True)
+        else:
+            self.logger.error(message)
 
-    return logger
-
-# Example usage for gaming modules
-logger = setup_logger('automation-tool-39')
+    def log_info(self, message: str) -> None:
+        """General info logging for operational transparency."""
+        if message:
+            self.logger.info(message)
