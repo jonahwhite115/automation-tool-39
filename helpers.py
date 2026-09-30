@@ -1,26 +1,29 @@
+import time
 import logging
+from typing import Union, Optional
 
 logger = logging.getLogger(__name__)
 
-def validate_game_input(input_data: dict) -> bool:
-    """Validate game action data structure and value ranges."""
-    required_keys = {'action_id', 'cooldown', 'target_coords'}
-    
-    if not all(k in input_data for k in required_keys):
-        logger.warning("Missing required keys in input packet")
-        return False
+def format_game_timestamp(seconds: float) -> str:
+    """Convert raw float seconds into a human-readable duration string."""
+    minutes, secs = divmod(int(seconds), 60)
+    return f"{minutes:02d}m{secs:02d}s"
 
-    if not isinstance(input_data['cooldown'], (int, float)) or input_data['cooldown'] < 0:
-        logger.warning(f"Invalid cooldown value: {input_data['cooldown']}")
-        return False
+def get_retry_delay(attempt: int, base_delay: float = 1.0) -> float:
+    """Calculate exponential backoff duration for network operations."""
+    return base_delay * (2 ** (attempt - 1))
 
-    coords = input_data['target_coords']
-    if not (isinstance(coords, tuple) and len(coords) == 2):
-        logger.warning("Invalid coordinate format")
-        return False
+def validate_player_id(player_id: Union[int, str]) -> Optional[str]:
+    """Sanitize and validate player identifiers for the gaming API."""
+    try:
+        clean_id = str(player_id).strip()
+        if not clean_id:
+            return None
+        return clean_id
+    except (ValueError, TypeError):
+        return None
 
-    return True
-
-def sanitize_input(data: dict) -> dict:
-    """Sanitize input strings for logging and execution."""
-    return {k: str(v).strip() for k, v in data.items()}
+def log_performance_metrics(func_name: str, start_time: float) -> None:
+    """Record the execution time of automation routines."""
+    elapsed = time.perf_counter() - start_time
+    logger.info(f"Routine '{func_name}' completed in {elapsed:.4f} seconds")
