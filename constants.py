@@ -1,1 +1,46 @@
-"""Game automation configuration and engine constants.\n\nDefines states, key mappings, screen coordinates, color bounds,\nand timing defaults for the gaming bot engine.\n"""\n\nfrom typing import Dict, Final, Tuple\n\n# Bot execution states to coordinate the behavioral tree logic\nSTATE_IDLE: Final[str] = "idle"\nSTATE_NAVIGATING: Final[str] = "navigating"\nSTATE_COMBAT: Final[str] = "combat"\nSTATE_LOOTING: Final[str] = "looting"\nSTATE_HEALING: Final[str] = "healing"\n\n# Coordinate boxes formatted as (x, y, width, height) in pixels\nMINIMAP_REGION: Final[Tuple[int, int, int, int]] = (1600, 20, 300, 300)\nHEALTH_BAR_REGION: Final[Tuple[int, int, int, int]] = (100, 50, 250, 30)\nMANA_BAR_REGION: Final[Tuple[int, int, int, int]] = (100, 85, 250, 30)\n\n# Specific RGB colors used to analyze the screen status\nCOLOR_HEALTH_RED: Final[Tuple[int, int, int]] = (200, 0, 0)\nCOLOR_MANA_BLUE: Final[Tuple[int, int, int]] = (0, 0, 200)\nCOLOR_LOCKED_GOLD: Final[Tuple[int, int, int]] = (255, 215, 0)\n\n# Key mappings matched to the game client settings\nHOTKEYS: Final[Dict[str, str]] = {\n    "primary_attack": "1",\n    "secondary_attack": "2",\n    "heal_potion": "q",\n    "mana_potion": "e",\n    "target_next": "tab",\n    "interact": "f",\n}\n\n# Configuration thresholds and timings (in seconds)\nPIXEL_MATCH_TOLERANCE: Final[int] = 10\nCOOLDOWN_PRIMARY_ATTACK: Final[float] = 1.5\nCOOLDOWN_SECONDARY_ATTACK: Final[float] = 6.0\nSCAN_INTERVAL: Final[float] = 0.1\nHUMANIZATION_DELAY_RANGE: Final[Tuple[float, float]] = (0.05, 0.25)\n
+"""Centralized constants for gaming automation tool."""
+
+from enum import Enum, auto
+from typing import Final, NamedTuple
+
+# Timing and Delays (in seconds)
+DEFAULT_TICK_RATE: Final[float] = 0.05
+MAX_RETRY_TIMEOUT: Final[float] = 10.0
+HUMAN_INPUT_JITTER: Final[tuple[float, float]] = (0.02, 0.08)
+
+# Screen and Detection Thresholds
+DEFAULT_SCREEN_RESOLUTION: Final[tuple[int, int]] = (1920, 1080)
+IMAGE_MATCH_THRESHOLD: Final[float] = 0.85
+COLOR_TOLERANCE: Final[int] = 12
+
+
+class GameState(Enum):
+    """Supported internal automation states."""
+    UNKNOWN = auto()
+    MAIN_MENU = auto()
+    IN_GAME = auto()
+    IN_COMBAT = auto()
+    LOADING = auto()
+    PAUSED = auto()
+    INVENTORY_OPEN = auto()
+
+
+class KeyBind(NamedTuple):
+    """Structure for mapping key combinations."""
+    primary_key: str
+    modifier: str | None = None
+
+
+# Default Hotkeys Configuration
+DEFAULT_HOTKEYS: Final[dict[str, KeyBind]] = {
+    "HEALTH_POTION": KeyBind(primary_key="1"),
+    "MANA_POTION": KeyBind(primary_key="2"),
+    "OPEN_INVENTORY": KeyBind(primary_key="i"),
+    "TOGGLE_PAUSE": KeyBind(primary_key="p", modifier="ctrl"),
+    "ESCAPE_MENU": KeyBind(primary_key="esc"),
+}
+
+
+def get_hotkey(action_name: str) -> KeyBind | None:
+    """Retrieve hotkey configuration for a specific action."""
+    return DEFAULT_HOTKEYS.get(action_name.upper())
