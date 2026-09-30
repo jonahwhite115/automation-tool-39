@@ -1,41 +1,51 @@
-# automation-tool-39
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-automation-tool-39 is a high-performance Python framework designed for automating repetitive in-game tasks with precision and reliability. By leveraging computer vision and low-latency input simulation, it helps players optimize resource gathering and inventory management workflows.
+# automation-tool-39
 
-### Key Features
+`automation-tool-39` is a lightweight Python automation framework designed to streamline resource harvesting and inventory management in modern PC RPGs. By combining real-time computer vision with randomized input simulation, it automates repetitive gameplay routines safely and efficiently.
 
-*   **Adaptive CV Engine:** Utilizes OpenCV for real-time screen analysis, ensuring actions are performed only when specific game states are detected.
-*   **Humanized Input Simulation:** Employs randomized delay algorithms and non-linear mouse paths to minimize detection risks.
-*   **Modular Scripting:** Easily extend functionality by plugging in custom Python modules to handle unique game-specific logic.
-*   **Error Recovery System:** Built-in watchdog functionality to restart tasks if the game client freezes or the character disconnects.
+## Features
 
-### Installation
+- **OCR Inventory & Market Scanning:** Automatically parses item stats, stack quantities, and vendor prices directly from the game UI using OpenCV.
+- **Humanized Input Emulation:** Generates natural Bezier curve mouse movements and randomized micro-delays to prevent pattern detection.
+- **State-Aware Fail-Safes:** Triggers immediate system pause or logout upon detecting lower health thresholds, player trade requests, or disconnected servers.
+- **Multi-Client Session Handling:** Supports running independent automation profiles across multiple concurrently running game instances.
 
-Ensure you have [Python 3.10+](https://python.org) installed on your system.
+## Installation
+
+Ensure you have Python 3.9 or higher installed alongside Tesseract OCR on your system.
 
 ```bash
-# Clone the repository
 git clone https://github.com/Developer/automation-tool-39.git
 cd automation-tool-39
-
-# Set up a virtual environment
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Basic Usage
+## Basic Usage
 
-Define your target logic in `scripts/main_task.py` and execute the engine from the terminal:
+Run a pre-configured crafting loop on an active game process:
 
-```bash
-# Run the automation tool with a specific configuration profile
-python src/engine.py --profile configs/gold_farming.json --verbose
+```python
+from automation_tool_39 import GameBot, WindowManager
+
+# Bind to the target game window
+window = WindowManager.find_window("FantasyRPG Client")
+bot = GameBot(target_window=window, capture_fps=30)
+
+# Execute automated loop
+@bot.on_frame
+def crafting_routine(frame):
+    if bot.vision.find("craft_button.png", confidence=0.88):
+        bot.input.click("craft_button.png")
+        bot.vision.wait_until_present("craft_complete.png", timeout=5)
+        bot.input.press_key("e")
+
+if __name__ == "__main__":
+    bot.start()
 ```
 
-### Important Notice
-This tool is for educational purposes and personal workflow optimization. Please review the Terms of Service of your specific game to ensure compliance with third-party software policies. The developer assumes no responsibility for account actions resulting from the use of this software.
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
