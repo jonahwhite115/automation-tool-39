@@ -1,48 +1,36 @@
-import math
-from typing import Dict, Any, List
+import functools
+import time
+import logging
+from typing import Callable, Any
 
+# Logger setup for automation-tool-39 core performance monitoring
+logger = logging.getLogger('automation_tool_39.utils')
 
-def calculate_level_from_xp(xp: int, base_xp: int = 100, exponent: float = 1.5) -> int:
-    """
-    Calculates the player level based on total XP using an exponential curve.
-    """
-    if xp < 0:
-        raise ValueError("XP cannot be negative")
-    if xp == 0:
-        return 1
-    # Level = (XP / base_xp)^(1/exponent) + 1
-    return int(math.pow(xp / base_xp, 1 / exponent)) + 1
+CACHE_TTL = 300
+_cache = {}
 
+def memoize_with_ttl(ttl: int = CACHE_TTL) -> Callable:
+    """Performance optimization: cache heavy gaming state lookups."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            key = (func.__name__, args, frozenset(kwargs.items()))
+            now = time.time()
+            if key in _cache and now - _cache[key]['timestamp'] < ttl:
+                return _cache[key]['value']
+            
+            result = func(*args, **kwargs)
+            _cache[key] = {'value': result, 'timestamp': now}
+            return result
+        return wrapper
+    return decorator
 
-def calculate_xp_for_level(level: int, base_xp: int = 100, exponent: float = 1.5) -> int:
-    """
-    Calculates the minimum cumulative XP required to reach a specific level.
-    """
-    if level <= 1:
-        return 0
-    return int(base_xp * math.pow(level - 1, exponent))
+def batch_process(items: list, chunk_size: int = 100):
+    """Generator for efficient batching of game entity updates."""
+    for i in range(0, len(items), chunk_size):
+        yield items[i:i + chunk_size]
 
-
-def filter_items_by_rarity(inventory: List[Dict[str, Any]], min_rarity: str) -> List[Dict[str, Any]]:
-    """
-    Filters a list of inventory items by a minimum rarity threshold.
-    Rarity hierarchy: common < uncommon < rare < epic < legendary
-    """
-    rarity_ranks = {
-        "common": 1,
-        "uncommon": 2,
-        "rare": 3,
-        "epic": 4,
-        "legendary": 5
-    }
-
-    min_rank = rarity_ranks.get(min_rarity.lower(), 1)
-    filtered_items = []
-
-    for item in inventory:
-        item_rarity = item.get("rarity", "common").lower()
-        current_rank = rarity_ranks.get(item_rarity, 1)
-        if current_rank >= min_rank:
-            filtered_items.append(item)
-
-    return filtered_items
+def get_system_load_factor() -> float:
+    """Calculate throttling factor to preserve CPU for game process."""
+    # Placeholder for actual system monitor hook
+    return 0.85
