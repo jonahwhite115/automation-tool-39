@@ -1,25 +1,39 @@
-class ValidationError(Exception):
-    """Custom exception for input validation failures in gaming automation."""
-    pass
+import re
 
-def validate_game_input(data: dict, required_keys: list):
-    """Checks if input data contains all mandatory keys and valid types."""
-    for key in required_keys:
-        if key not in data:
-            raise ValidationError(f"Missing required key: {key}")
+class InputValidator:
+    """
+    handles validation for gaming automation inputs
+    """
+    @staticmethod
+    def validate_coordinates(x, y):
+        if not (isinstance(x, int) and isinstance(y, int)):
+            return False
+        return 0 <= x <= 1920 and 0 <= y <= 1080
+
+    @staticmethod
+    def validate_action_delay(delay):
+        try:
+            value = float(delay)
+            return 0.1 <= value <= 60.0
+        except (ValueError, TypeError):
+            return False
+
+    @staticmethod
+    def validate_command(command):
+        allowed_patterns = [r'^click_\d+x\d+$', r'^press_[a-z0-9]+$', r'^wait_\d+$']
+        return any(re.match(p, command) for p in allowed_patterns)
+
+def run_validation_cycle(data):
+    """
+    main loop validation check for incoming packets
+    """
+    results = {
+        "coords": InputValidator.validate_coordinates(data.get('x'), data.get('y')),
+        "delay": InputValidator.validate_action_delay(data.get('delay')),
+        "command": InputValidator.validate_command(data.get('cmd', ''))
+    }
     
-    if not isinstance(data.get('action_delay'), (int, float)):
-        raise ValidationError("Invalid action_delay: must be numeric")
+    if not all(results.values()):
+        return False, f"validation failure: {results}"
     
-    if data.get('action_delay', 0) < 0:
-        raise ValidationError("Action delay cannot be negative")
-
-def sanitize_input(user_input: str) -> str:
-    """Removes non-alphanumeric characters to prevent injection issues."""
-    return ''.join(char for char in user_input if char.isalnum())
-
-def validate_coordinate_range(x: int, y: int, bounds: tuple):
-    """Ensures screen coordinates remain within game window bounds."""
-    width, height = bounds
-    if not (0 <= x <= width and 0 <= y <= height):
-        raise ValidationError(f"Coordinates ({x}, {y}) outside screen bounds")
+    return True, "success"
