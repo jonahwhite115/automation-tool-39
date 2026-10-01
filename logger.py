@@ -1,45 +1,40 @@
 import logging
-import os
-from datetime import datetime
+import sys
+from pathlib import Path
 
-class AutomationLogger:
-    """Handles application logging with edge case safety."""
+def setup_logger(name: str, log_file: str = "automation.log") -> logging.Logger:
+    """Initializes a standard logger for automation-tool-39."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
 
-    def __init__(self, log_dir: str = "logs"):
-        self.log_dir = log_dir
-        self._ensure_log_directory()
-        self.logger = logging.getLogger("automation-tool-39")
-        self._configure_logger()
+    # Prevent duplicate handlers if logger is re-initialized
+    if not logger.handlers:
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
 
-    def _ensure_log_directory(self) -> None:
-        """Create directory if missing, handle permission edge cases."""
-        try:
-            if not os.path.exists(self.log_dir):
-                os.makedirs(self.log_dir, exist_ok=True)
-        except OSError as e:
-            print(f"Critical: Failed to create log directory: {e}")
+        # Console output for real-time monitoring
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
-    def _configure_logger(self) -> None:
-        """Standard file logging setup with basic formatting."""
-        self.logger.setLevel(logging.INFO)
-        log_path = os.path.join(self.log_dir, f"run_{datetime.now().strftime('%Y%m%d')}.log")
-        
-        try:
-            handler = logging.FileHandler(log_path)
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-        except (PermissionError, IOError) as e:
-            print(f"Warning: Logger file inaccessible: {e}")
+        # File output for long-term audit
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-    def log_error(self, message: str, exc: Exception = None) -> None:
-        """Safe logging of errors with exception detail."""
-        if exc:
-            self.logger.error(f"{message}: {str(exc)}", exc_info=True)
-        else:
-            self.logger.error(message)
+    return logger
 
-    def log_info(self, message: str) -> None:
-        """General info logging for operational transparency."""
-        if message:
-            self.logger.info(message)
+def log_performance(func):
+    """Decorator for tracking function execution time."""
+    import time
+    import functools
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        duration = time.perf_counter() - start
+        logging.getLogger("performance").debug(f"{func.__name__} took {duration:.4f}s")
+        return result
+    return wrapper
