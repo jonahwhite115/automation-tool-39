@@ -1,30 +1,43 @@
 import time
-import functools
+import random
 import logging
 
-logger = logging.getLogger(__name__)
+# Configure basic logger for automation-tool-39
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('automation-tool-39')
 
-def with_retry(max_attempts=3, delay=2):
-    """Decorator to retry network operations on failure."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            attempts = 0
-            while attempts < max_attempts:
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    attempts += 1
-                    logger.warning(f"Attempt {attempts} failed: {e}")
-                    if attempts >= max_attempts:
-                        raise
-                    time.sleep(delay)
-        return wrapper
-    return decorator
+def sleep_randomly(min_sec=1.0, max_sec=3.0):
+    """Simulates human-like delays to avoid detection."""
+    delay = random.uniform(min_sec, max_sec)
+    time.sleep(delay)
+    return delay
 
-@with_retry(max_attempts=3, delay=1)
-def fetch_game_data(endpoint):
-    """Simulated network request to a gaming API."""
-    # Example implementation logic
-    logger.info(f"Fetching data from {endpoint}")
-    return {"status": "success", "data": "game_config_payload"}
+def validate_game_state(state, expected_keys):
+    """Checks if all required keys exist in the game state dict."""
+    if not isinstance(state, dict):
+        return False
+    return all(key in state for key in expected_keys)
+
+def format_coords(x, y):
+    """Standardizes coordinate tuples for interaction events."""
+    return (int(x), int(y))
+
+def retry_operation(func, retries=3, delay=1):
+    """Decorator-like execution wrapper for volatile game actions."""
+    last_error = None
+    for i in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Attempt {i+1} failed, retrying in {delay}s...")
+            time.sleep(delay)
+    logger.error(f"Operation failed after {retries} attempts: {last_error}")
+    return None
+
+def log_event(message, level="info"):
+    """Standardized logging wrapper for automation tracking."""
+    if level == "info":
+        logger.info(f"[GAME_EVENT] {message}")
+    elif level == "error":
+        logger.error(f"[GAME_ERROR] {message}")
