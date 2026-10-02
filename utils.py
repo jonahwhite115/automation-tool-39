@@ -1,58 +1,45 @@
 import time
+import random
 import logging
-from typing import Optional, Dict, Any
+from functools import wraps
+from typing import Callable, Any, Type, Tuple
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("automation_tool.utils")
 
-def format_game_data(raw_data: Dict[str, Any], session_id: str) -> Dict[str, Any]:
+def retry_on_failure(
+    retries: int = 3,
+    initial_delay: float = 1.0,
+    backoff_factor: float = 2.0,
+    jitter: bool = True,
+    exceptions: Tuple[Type[BaseException], ...] = (Exception,)
+) -> Callable:
     """
-    Normalizes raw game data into a structured format for storage.
-
-    Args:
-        raw_data: The incoming dictionary from the game API.
-        session_id: Unique identifier for the current gaming session.
-
-    Returns:
-        A cleaned dictionary containing formatted player stats.
+    Decorator to retry network operations or API requests on specified exceptions.
+    Features exponential backoff and randomized jitter to prevent thundering herds.
     """
-    return {
-        "session_id": session_id,
-        "timestamp": time.time(),
-        "score": int(raw_data.get("points", 0)),
-        "active": bool(raw_data.get("is_online", False))
-    }
-
-def validate_connection(latency: float, threshold: float = 100.0) -> bool:
-    """
-    Checks if the latency is within the acceptable gaming threshold.
-
-    Args:
-        latency: Current network latency in milliseconds.
-        threshold: Maximum allowed latency in milliseconds.
-
-    Returns:
-        True if connection is stable, False otherwise.
-    """
-    if latency > threshold:
-        logger.warning(f"High latency detected: {latency}ms")
-        return False
-    return True
-
-def retry_operation(func: Any, retries: int = 3) -> Optional[Any]:
-    """
-    Attempts a function call multiple times before giving up.
-
-    Args:
-        func: Callable to execute.
-        retries: Number of attempts to make.
-
-    Returns:
-        The result of the function call or None.
-    """
-    for i in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            logger.error(f"Attempt {i+1} failed: {e}")
-            time.sleep(1)
-    return None
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            delay = initial_delay
+            for attempt in range(1, retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    if attempt == retries:
+                        logger.error(f"Failed '{func.__name__}' after {retries} attempts: {e}")
+                        raise e
+                    
+                    # Calculate backoff with optional jitter
+                    sleep_time = delay
+                    if jitter:
+                        sleep_time += random.uniform(0, delay * 0.5)
+                    
+                    logger.warning(
+                        f"Attempt {attempt}/{retries} failed for '{func.__name__}': {e}. "
+                        f"Retrying in {sleep_time:.2f} seconds..."
+                    )
+                    time.sleep(sleep_time)
+                    delay *= backoff_factor
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
