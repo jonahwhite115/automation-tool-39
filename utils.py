@@ -1,36 +1,58 @@
-import functools
 import time
 import logging
-from typing import Callable, Any
+from typing import Optional, Dict, Any
 
-# Logger setup for automation-tool-39 core performance monitoring
-logger = logging.getLogger('automation_tool_39.utils')
+logger = logging.getLogger(__name__)
 
-CACHE_TTL = 300
-_cache = {}
+def format_game_data(raw_data: Dict[str, Any], session_id: str) -> Dict[str, Any]:
+    """
+    Normalizes raw game data into a structured format for storage.
 
-def memoize_with_ttl(ttl: int = CACHE_TTL) -> Callable:
-    """Performance optimization: cache heavy gaming state lookups."""
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            key = (func.__name__, args, frozenset(kwargs.items()))
-            now = time.time()
-            if key in _cache and now - _cache[key]['timestamp'] < ttl:
-                return _cache[key]['value']
-            
-            result = func(*args, **kwargs)
-            _cache[key] = {'value': result, 'timestamp': now}
-            return result
-        return wrapper
-    return decorator
+    Args:
+        raw_data: The incoming dictionary from the game API.
+        session_id: Unique identifier for the current gaming session.
 
-def batch_process(items: list, chunk_size: int = 100):
-    """Generator for efficient batching of game entity updates."""
-    for i in range(0, len(items), chunk_size):
-        yield items[i:i + chunk_size]
+    Returns:
+        A cleaned dictionary containing formatted player stats.
+    """
+    return {
+        "session_id": session_id,
+        "timestamp": time.time(),
+        "score": int(raw_data.get("points", 0)),
+        "active": bool(raw_data.get("is_online", False))
+    }
 
-def get_system_load_factor() -> float:
-    """Calculate throttling factor to preserve CPU for game process."""
-    # Placeholder for actual system monitor hook
-    return 0.85
+def validate_connection(latency: float, threshold: float = 100.0) -> bool:
+    """
+    Checks if the latency is within the acceptable gaming threshold.
+
+    Args:
+        latency: Current network latency in milliseconds.
+        threshold: Maximum allowed latency in milliseconds.
+
+    Returns:
+        True if connection is stable, False otherwise.
+    """
+    if latency > threshold:
+        logger.warning(f"High latency detected: {latency}ms")
+        return False
+    return True
+
+def retry_operation(func: Any, retries: int = 3) -> Optional[Any]:
+    """
+    Attempts a function call multiple times before giving up.
+
+    Args:
+        func: Callable to execute.
+        retries: Number of attempts to make.
+
+    Returns:
+        The result of the function call or None.
+    """
+    for i in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            logger.error(f"Attempt {i+1} failed: {e}")
+            time.sleep(1)
+    return None
