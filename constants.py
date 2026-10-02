@@ -1,46 +1,41 @@
-"""Centralized constants for gaming automation tool."""
+import enum
 
-from enum import Enum, auto
-from typing import Final, NamedTuple
+# Gaming data configuration constants
 
-# Timing and Delays (in seconds)
-DEFAULT_TICK_RATE: Final[float] = 0.05
-MAX_RETRY_TIMEOUT: Final[float] = 10.0
-HUMAN_INPUT_JITTER: Final[tuple[float, float]] = (0.02, 0.08)
+class GamePlatform(enum.Enum):
+    STEAM = "steam"
+    EPIC = "epic_games"
+    GOG = "gog"
+    XBOX = "xbox_pc"
 
-# Screen and Detection Thresholds
-DEFAULT_SCREEN_RESOLUTION: Final[tuple[int, int]] = (1920, 1080)
-IMAGE_MATCH_THRESHOLD: Final[float] = 0.85
-COLOR_TOLERANCE: Final[int] = 12
+# Standardized status codes for automation tasks
+class TaskStatus(enum.IntEnum):
+    PENDING = 0
+    RUNNING = 1
+    COMPLETED = 2
+    FAILED = 3
 
+# Data directory paths for automation-tool-39
+DEFAULT_DATA_DIR = "data/logs"
+BACKUP_DIR = "data/backups"
 
-class GameState(Enum):
-    """Supported internal automation states."""
-    UNKNOWN = auto()
-    MAIN_MENU = auto()
-    IN_GAME = auto()
-    IN_COMBAT = auto()
-    LOADING = auto()
-    PAUSED = auto()
-    INVENTORY_OPEN = auto()
+# Throttle limits for API requests to prevent bans
+MAX_REQUESTS_PER_MINUTE = 30
+REQUEST_TIMEOUT_SECONDS = 15
 
+# Supported save file extensions
+SAVE_FILE_EXTENSIONS = {".sav", ".dat", ".json", ".xml"}
 
-class KeyBind(NamedTuple):
-    """Structure for mapping key combinations."""
-    primary_key: str
-    modifier: str | None = None
+# Schema validation thresholds
+REQUIRED_FIELDS = {"user_id", "timestamp", "game_id", "action"}
 
+def is_supported_file(filename: str) -> bool:
+    """Checks if a file extension is supported for processing."""
+    return any(filename.endswith(ext) for ext in SAVE_FILE_EXTENSIONS)
 
-# Default Hotkeys Configuration
-DEFAULT_HOTKEYS: Final[dict[str, KeyBind]] = {
-    "HEALTH_POTION": KeyBind(primary_key="1"),
-    "MANA_POTION": KeyBind(primary_key="2"),
-    "OPEN_INVENTORY": KeyBind(primary_key="i"),
-    "TOGGLE_PAUSE": KeyBind(primary_key="p", modifier="ctrl"),
-    "ESCAPE_MENU": KeyBind(primary_key="esc"),
+# Error logging templates
+ERROR_MESSAGES = {
+    "AUTH_FAIL": "Authentication token expired or invalid",
+    "PARSE_FAIL": "Failed to parse game save data",
+    "NETWORK_ERR": "Connection interrupted while syncing data"
 }
-
-
-def get_hotkey(action_name: str) -> KeyBind | None:
-    """Retrieve hotkey configuration for a specific action."""
-    return DEFAULT_HOTKEYS.get(action_name.upper())
