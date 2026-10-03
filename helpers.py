@@ -1,29 +1,38 @@
+import random
 import time
-import logging
-from typing import Union, Optional
+from typing import Tuple
 
-logger = logging.getLogger(__name__)
 
-def format_game_timestamp(seconds: float) -> str:
-    """Convert raw float seconds into a human-readable duration string."""
-    minutes, secs = divmod(int(seconds), 60)
-    return f"{minutes:02d}m{secs:02d}s"
+def get_randomized_delay(base_seconds: float, variance_percent: float = 0.2) -> float:
+    """Calculate a randomized delay duration to simulate human reaction times."""
+    min_delay = base_seconds * (1.0 - variance_percent)
+    max_delay = base_seconds * (1.0 + variance_percent)
+    return max(0.0, random.uniform(min_delay, max_delay))
 
-def get_retry_delay(attempt: int, base_delay: float = 1.0) -> float:
-    """Calculate exponential backoff duration for network operations."""
-    return base_delay * (2 ** (attempt - 1))
 
-def validate_player_id(player_id: Union[int, str]) -> Optional[str]:
-    """Sanitize and validate player identifiers for the gaming API."""
-    try:
-        clean_id = str(player_id).strip()
-        if not clean_id:
-            return None
-        return clean_id
-    except (ValueError, TypeError):
-        return None
+def sleep_with_jitter(base_seconds: float, variance_percent: float = 0.2) -> None:
+    """Pause execution for a randomized duration."""
+    delay = get_randomized_delay(base_seconds, variance_percent)
+    time.sleep(delay)
 
-def log_performance_metrics(func_name: str, start_time: float) -> None:
-    """Record the execution time of automation routines."""
-    elapsed = time.perf_counter() - start_time
-    logger.info(f"Routine '{func_name}' completed in {elapsed:.4f} seconds")
+
+def scale_coordinates(
+    x: int, y: int, source_res: Tuple[int, int], target_res: Tuple[int, int]
+) -> Tuple[int, int]:
+    """Scale click coordinates from a reference screen resolution to target resolution."""
+    src_w, src_h = source_res
+    tgt_w, tgt_h = target_res
+
+    if src_w <= 0 or src_h <= 0:
+        raise ValueError("Source resolution dimensions must be positive.")
+
+    scaled_x = int(round((x / src_w) * tgt_w))
+    scaled_y = int(round((y / src_h) * tgt_h))
+    return scaled_x, scaled_y
+
+
+def is_color_match(
+    rgb1: Tuple[int, int, int], rgb2: Tuple[int, int, int], tolerance: int = 15
+) -> bool:
+    """Check if two RGB color tuples match within a given per-channel tolerance."""
+    return all(abs(c1 - c2) <= tolerance for c1, c2 in zip(rgb1, rgb2))
