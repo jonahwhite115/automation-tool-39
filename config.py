@@ -1,33 +1,29 @@
-import json
 import os
-from typing import Any, Dict
+from dataclasses import dataclass
+from typing import Dict, Any
 
-DEFAULT_CONFIG = {
-    "fps_limit": 60,
-    "auto_clicker": False,
-    "hotkey": "f10",
-    "logging": True
-}
+@dataclass(frozen=True)
+class GameConfig:
+    POLLING_RATE: float = 0.5
+    MAX_RETRIES: int = 3
+    SESSION_TIMEOUT: int = 3600
+    DEFAULT_LOG_LEVEL: str = 'INFO'
 
-def load_config(filepath: str = "config.json") -> Dict[str, Any]:
-    """Loads configuration from disk or returns defaults if missing."""
-    if not os.path.exists(filepath):
-        save_config(DEFAULT_CONFIG, filepath)
-        return DEFAULT_CONFIG
+class ConfigLoader:
+    """Handles configuration ingestion from environment variables."""
+    def __init__(self) -> None:
+        self._defaults = GameConfig()
 
-    try:
-        with open(filepath, "r") as f:
-            config = json.load(f)
-            # Ensure defaults for missing keys
-            return {**DEFAULT_CONFIG, **config}
-    except (json.JSONDecodeError, IOError):
-        return DEFAULT_CONFIG
+    def get_setting(self, key: str, default: Any = None) -> Any:
+        return os.getenv(key, default or getattr(self._defaults, key, None))
 
-def save_config(config: Dict[str, Any], filepath: str = "config.json") -> None:
-    """Persists current configuration to a JSON file."""
-    with open(filepath, "w") as f:
-        json.dump(config, f, indent=4)
+    @property
+    def settings(self) -> Dict[str, Any]:
+        return {
+            "rate": self.get_setting("POLLING_RATE"),
+            "retries": self.get_setting("MAX_RETRIES"),
+            "timeout": self.get_setting("SESSION_TIMEOUT")
+        }
 
-if __name__ == "__main__":
-    current_config = load_config()
-    print(f"Active configuration: {current_config}")
+def load_config() -> ConfigLoader:
+    return ConfigLoader()
