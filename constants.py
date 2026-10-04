@@ -1,29 +1,33 @@
 import os
 
-# screen coordinate ranges for game engine interactions
-GAME_SCREEN_WIDTH = 1920
-GAME_SCREEN_HEIGHT = 1080
-
-# paths for automation assets and cache
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ASSET_DIR = os.path.join(BASE_DIR, 'assets')
-CACHE_DIR = os.path.join(BASE_DIR, '.cache')
-
-# retry configuration for network requests and input hooks
+# Configuration constants for automation-tool-39
+DEFAULT_TIMEOUT = 30
 MAX_RETRIES = 3
-RETRY_DELAY_SECONDS = 1.5
 
-# color profiles for image processing
-COLOR_THRESHOLD = 0.85
-UI_HIGHLIGHT_COLOR = (255, 215, 0)
+# Gaming environment paths
+GAME_EXECUTABLE_PATH = os.getenv("GAME_PATH", "/usr/local/bin/game")
+CONFIG_FILE = "config.json"
 
-# input timing constants in milliseconds
-CLICK_HOLD_DURATION = 150
-INPUT_COOLDOWN = 500
+# Error message mapping for edge cases
+ERROR_MESSAGES = {
+    "MISSING_FILE": "The required game configuration file was not found.",
+    "TIMEOUT_EXCEEDED": "The game process failed to respond within limits.",
+    "INVALID_STATE": "An illegal state transition was detected in the game loop.",
+    "PERMISSION_DENIED": "Insufficient system privileges to modify game memory.",
+    "PROCESS_NOT_RUNNING": "Target game process is not currently active."
+}
 
-# logging configuration
-LOG_FILE = 'automation-tool.log'
-LOG_LEVEL = 'INFO'
+# Supported resolutions for display parsing
+SUPPORTED_RESOLUTIONS = [
+    (1920, 1080),
+    (2560, 1440),
+    (3840, 2160)
+]
 
-# environment validation keys
-REQUIRED_ENV_VARS = ['GAME_PATH', 'API_KEY']
+# Network constraints
+MAX_LATENCY_MS = 150
+CONNECTION_RETRY_DELAY = 5
+
+def get_error_message(code: str) -> str:
+    """Retrieve standardized error message or fallback string."""
+    return ERROR_MESSAGES.get(code, "An unknown internal error occurred.")
