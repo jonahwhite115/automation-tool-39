@@ -1,38 +1,33 @@
-import random
-import time
-from typing import Tuple
+import logging
+from typing import Any, Optional
 
+logger = logging.getLogger(__name__)
 
-def get_randomized_delay(base_seconds: float, variance_percent: float = 0.2) -> float:
-    """Calculate a randomized delay duration to simulate human reaction times."""
-    min_delay = base_seconds * (1.0 - variance_percent)
-    max_delay = base_seconds * (1.0 + variance_percent)
-    return max(0.0, random.uniform(min_delay, max_delay))
+def safe_execute(func: callable, *args: Any, **kwargs: Any) -> Optional[Any]:
+    """Executes gaming automation tasks with safety wrappers."""
+    try:
+        return func(*args, **kwargs)
+    except (ConnectionError, TimeoutError) as e:
+        logger.error(f"Network failure in {func.__name__}: {e}")
+    except ValueError as e:
+        logger.error(f"Invalid configuration parameter: {e}")
+    except Exception as e:
+        logger.critical(f"Unexpected error in {func.__name__}: {type(e).__name__} - {e}")
+    return None
 
+def validate_game_state(state: dict) -> bool:
+    """Checks integrity of retrieved game telemetry data."""
+    try:
+        if not isinstance(state, dict):
+            return False
+        required_keys = {'health', 'pos', 'active'}
+        return all(key in state for key in required_keys)
+    except Exception:
+        return False
 
-def sleep_with_jitter(base_seconds: float, variance_percent: float = 0.2) -> None:
-    """Pause execution for a randomized duration."""
-    delay = get_randomized_delay(base_seconds, variance_percent)
-    time.sleep(delay)
-
-
-def scale_coordinates(
-    x: int, y: int, source_res: Tuple[int, int], target_res: Tuple[int, int]
-) -> Tuple[int, int]:
-    """Scale click coordinates from a reference screen resolution to target resolution."""
-    src_w, src_h = source_res
-    tgt_w, tgt_h = target_res
-
-    if src_w <= 0 or src_h <= 0:
-        raise ValueError("Source resolution dimensions must be positive.")
-
-    scaled_x = int(round((x / src_w) * tgt_w))
-    scaled_y = int(round((y / src_h) * tgt_h))
-    return scaled_x, scaled_y
-
-
-def is_color_match(
-    rgb1: Tuple[int, int, int], rgb2: Tuple[int, int, int], tolerance: int = 15
-) -> bool:
-    """Check if two RGB color tuples match within a given per-channel tolerance."""
-    return all(abs(c1 - c2) <= tolerance for c1, c2 in zip(rgb1, rgb2))
+def format_telemetry(data: Optional[dict]) -> dict:
+    """Sanitizes and formats raw telemetry packets."""
+    default = {"health": 0, "pos": (0, 0), "active": False}
+    if data is None or not isinstance(data, dict):
+        return default
+    return {**default, **data}
