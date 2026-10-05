@@ -1,31 +1,29 @@
 import logging
-from logging.handlers import RotatingFileHandler
-import os
+import sys
+from pathlib import Path
 
-def setup_logger(name: str = "automation_tool"):
-    """Configures a rotating file logger for gaming automation tasks."""
+def setup_logger(name: str, log_file: str = "automation.log") -> logging.Logger:
+    """Configures a standardized logger for automation-tool-39."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
-
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-
-    # 5MB per file, keep 3 historical backups
-    handler = RotatingFileHandler(
-        "logs/automation.log", 
-        maxBytes=5 * 1024 * 1024, 
-        backupCount=3
-    )
 
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    handler.setFormatter(formatter)
 
-    if not logger.handlers:
-        logger.addHandler(handler)
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # File handler
+    log_path = Path(log_file)
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
     return logger
+
+def get_module_logger(name: str) -> logging.Logger:
+    """Factory function to retrieve existing module logger."""
+    return logging.getLogger(name)
