@@ -1,29 +1,49 @@
+import os
 import logging
-import sys
-from pathlib import Path
+from logging.handlers import RotatingFileHandler
 
-def setup_logger(name: str, log_file: str = "automation.log") -> logging.Logger:
-    """Configures a standardized logger for automation-tool-39."""
+def setup_logger(name: str = "game_bot", log_file: str = "logs/automation.log") -> logging.Logger:
+    """
+    Configures a standard rotating file logger and console output.
+    Designed for persistent tracking of gaming automation tasks.
+    """
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    if logger.hasHandlers():
+        return logger
+
+    # Shared formatter for standard, readable gaming bot output
+    log_format = logging.Formatter(
+        "[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
+    # Console output for quick manual tracking
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(log_format)
     logger.addHandler(console_handler)
 
-    # File handler
-    log_path = Path(log_file)
-    file_handler = logging.FileHandler(log_path)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    # Ensure logs directory exists before mounting rotating file handler
+    log_dir = os.path.dirname(log_file)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Rotating handler setup (limits to 3 backup logs of 2MB each)
+    try:
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=2 * 1024 * 1024,  # 2MB limits
+            backupCount=3,
+            encoding="utf-8"
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(log_format)
+        logger.addHandler(file_handler)
+    except (OSError, PermissionError) as error:
+        logger.warning(f"Could not setup rotating file log, falling back to console only: {error}")
 
     return logger
 
-def get_module_logger(name: str) -> logging.Logger:
-    """Factory function to retrieve existing module logger."""
-    return logging.getLogger(name)
+game_logger = setup_logger()
