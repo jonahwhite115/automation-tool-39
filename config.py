@@ -1,72 +1,36 @@
 import json
 import os
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 
+DEFAULT_CONFIG = {
+    "fps_limit": 60,
+    "auto_clicker": False,
+    "macro_delay": 500,
+    "theme": "dark"
+}
 
-class ConfigError(Exception):
-    """Raised when there is an issue loading or validating configuration."""
+def load_config(filepath: str = "config.json") -> Dict[str, Any]:
+    """Loads configuration from disk or returns defaults."""
+    if not os.path.exists(filepath):
+        save_config(DEFAULT_CONFIG, filepath)
+        return DEFAULT_CONFIG
 
-    pass
+    try:
+        with open(filepath, "r") as f:
+            config = json.load(f)
+            return {**DEFAULT_CONFIG, **config}
+    except (json.JSONDecodeError, IOError):
+        return DEFAULT_CONFIG
 
+def save_config(config: Dict[str, Any], filepath: str = "config.json") -> None:
+    """Persists configuration to a JSON file."""
+    try:
+        with open(filepath, "w") as f:
+            json.dump(config, f, indent=4)
+    except IOError as e:
+        print(f"Failed to save config: {e}")
 
-class GameConfig:
-    """Manages the configuration settings for the gaming automation tool.
-
-    Handles loading from disk, validation of keys, and default values
-    for automation parameters like resolution and hotkeys.
-    """
-
-    DEFAULT_CONFIG: Dict[str, Any] = {
-        "window_title": "Mortal Kombat 11",
-        "resolution": [1920, 1080],
-        "target_fps": 60,
-        "confidence_threshold": 0.85,
-        "hotkeys": {"start": "f1", "stop": "f2"},
-    }
-
-    def __init__(self, filepath: str) -> None:
-        """Initializes config manager and loads setting file if it exists."""
-        self.filepath: str = filepath
-        self.settings: Dict[str, Any] = self.DEFAULT_CONFIG.copy()
-        self.load()
-
-    def load(self) -> None:
-        """Loads configuration from JSON file; creates it with defaults if missing."""
-        if not os.path.exists(self.filepath):
-            self.save()
-            return
-
-        try:
-            with open(self.filepath, "r", encoding="utf-8") as file:
-                user_data = json.load(file)
-                self._merge_and_validate(user_data)
-        except (json.JSONDecodeError, OSError) as error:
-            raise ConfigError(
-                f"Failed to read config file: {error}"
-            ) from error
-
-    def save(self) -> None:
-        """Saves current settings dict to the configuration file."""
-        try:
-            with open(self.filepath, "w", encoding="utf-8") as file:
-                json.dump(self.settings, file, indent=4)
-        except OSError as error:
-            raise ConfigError(
-                f"Failed to save config file: {error}"
-            ) from error
-
-    def _merge_and_validate(self, data: Dict[str, Any]) -> None:
-        """Validates and merges user settings over the default values."""
-        for key, value in data.items():
-            if key in self.DEFAULT_CONFIG:
-                if not isinstance(value, type(self.DEFAULT_CONFIG[key])):
-                    raise ConfigError(
-                        f"Invalid type for {key}: expected {type(self.DEFAULT_CONFIG[key])}"
-                    )
-                self.settings[key] = value
-
-    @property
-    def resolution_tuple(self) -> Tuple[int, int]:
-        """Returns resolution configuration as a width/height integer tuple."""
-        res = self.settings["resolution"]
-        return (res[0], res[1])
+if __name__ == "__main__":
+    # Example usage for gaming tool initialization
+    current_config = load_config()
+    print(f"Loaded configuration: {current_config}")
