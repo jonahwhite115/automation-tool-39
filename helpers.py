@@ -1,33 +1,24 @@
-import logging
-from typing import Any, Optional
+import time
+import random
+import pyautogui
 
-logger = logging.getLogger(__name__)
+def sleep_random(min_sec: float = 0.5, max_sec: float = 2.0):
+    """Wait for a random duration to simulate human input."""
+    time.sleep(random.uniform(min_sec, max_sec))
 
-def safe_execute(func: callable, *args: Any, **kwargs: Any) -> Optional[Any]:
-    """Executes gaming automation tasks with safety wrappers."""
-    try:
-        return func(*args, **kwargs)
-    except (ConnectionError, TimeoutError) as e:
-        logger.error(f"Network failure in {func.__name__}: {e}")
-    except ValueError as e:
-        logger.error(f"Invalid configuration parameter: {e}")
-    except Exception as e:
-        logger.critical(f"Unexpected error in {func.__name__}: {type(e).__name__} - {e}")
-    return None
+def click_element(x: int, y: int, duration: float = 0.1):
+    """Move mouse to coordinates and perform a click."""
+    pyautogui.moveTo(x, y, duration=duration)
+    pyautogui.click()
 
-def validate_game_state(state: dict) -> bool:
-    """Checks integrity of retrieved game telemetry data."""
-    try:
-        if not isinstance(state, dict):
-            return False
-        required_keys = {'health', 'pos', 'active'}
-        return all(key in state for key in required_keys)
-    except Exception:
-        return False
+def is_pixel_match(x: int, y: int, expected_color: tuple, tolerance: int = 10) -> bool:
+    """Check if a pixel at specific coordinates matches expected RGB values."""
+    current_color = pyautogui.pixel(x, y)
+    return all(abs(c1 - c2) <= tolerance for c1, c2 in zip(current_color, expected_color))
 
-def format_telemetry(data: Optional[dict]) -> dict:
-    """Sanitizes and formats raw telemetry packets."""
-    default = {"health": 0, "pos": (0, 0), "active": False}
-    if data is None or not isinstance(data, dict):
-        return default
-    return {**default, **data}
+def capture_screenshot(region: tuple = None) -> str:
+    """Take a screenshot and return the file path."""
+    timestamp = int(time.time())
+    filename = f"capture_{timestamp}.png"
+    pyautogui.screenshot(filename, region=region)
+    return filename
