@@ -1,39 +1,31 @@
 class AutomationError(Exception):
-    """Base exception for all gaming automation errors."""
+    """Base exception for all automation-tool-39 errors."""
     pass
 
+class GameProcessError(AutomationError):
+    """Raised when the game process cannot be accessed."""
+    pass
 
-class GameClientError(AutomationError):
-    """Raised when the game client is not running or fails to respond."""
+class ConfigurationError(AutomationError):
+    """Raised when settings are invalid or missing."""
+    pass
 
-    def __init__(self, message: str = "Game client is not running or unreachable"):
-        super().__init__(message)
+class InputInjectionError(AutomationError):
+    """Raised when keyboard or mouse simulation fails."""
+    pass
 
+class PixelDetectionError(AutomationError):
+    """Raised when visual scanning fails to find targets."""
+    pass
 
-class DetectionError(AutomationError):
-    """Raised when image search or pixel detection fails on screen."""
+def handle_exception(exc: Exception):
+    """Format and log custom automation exceptions."""
+    if isinstance(exc, AutomationError):
+        print(f"[Automation Error] {type(exc).__name__}: {exc}")
+    else:
+        print(f"[Critical System Error] {exc}")
 
-    def __init__(self, target_name: str, message: str = None):
-        self.target_name = target_name
-        msg = message or f"Failed to detect visual element: '{target_name}'"
-        super().__init__(msg)
-
-
-class ActionTimeoutError(AutomationError):
-    """Raised when an automation macro or action exceeds its allotted time."""
-
-    def __init__(self, action_name: str, timeout_seconds: float):
-        self.action_name = action_name
-        self.timeout_seconds = timeout_seconds
-        super().__init__(
-            f"Action '{action_name}' timed out after {timeout_seconds}s"
-        )
-
-
-class InputBlockedError(AutomationError):
-    """Raised when simulated inputs are blocked by anti-cheat or system permissions."""
-
-    def __init__(
-        self, message: str = "Input simulation blocked by the target game window"
-    ):
-        super().__init__(message)
+def validate_game_state(condition: bool, message: str):
+    """Check game state and raise specific exception if false."""
+    if not condition:
+        raise GameProcessError(message)
