@@ -1,36 +1,39 @@
 import json
-import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from pathlib import Path
 
-DEFAULT_CONFIG = {
-    "fps_limit": 144,
-    "auto_start": True,
-    "log_level": "INFO",
-    "window_mode": "borderless"
-}
+class GameConfig:
+    """Handles loading and persistence of automation settings."""
 
-def load_config(config_path: str = "config.json") -> Dict[str, Any]:
-    """Loads configuration from disk or returns defaults if missing."""
-    config = DEFAULT_CONFIG.copy()
+    def __init__(self, config_path: str = "config.json") -> None:
+        self.path: Path = Path(config_path)
+        self.settings: Dict[str, Any] = self._load_default_settings()
 
-    if not os.path.exists(config_path):
-        return config
+    def _load_default_settings(self) -> Dict[str, Any]:
+        """Provides default automation configuration structure."""
+        return {
+            "fps_limit": 60,
+            "auto_loot": True,
+            "macro_delay_ms": 150,
+            "window_title": "GameClient"
+        }
 
-    try:
-        with open(config_path, "r") as f:
-            user_config = json.load(f)
-            config.update(user_config)
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Warning: failed to load config file: {e}. Using defaults.")
+    def load(self) -> None:
+        """Reads configuration from the filesystem."""
+        if self.path.exists():
+            with open(self.path, "r", encoding="utf-8") as f:
+                self.settings.update(json.load(f))
 
-    return config
+    def save(self) -> None:
+        """Persists current configuration state to disk."""
+        with open(self.path, "w", encoding="utf-8") as f:
+            json.dump(self.settings, f, indent=4)
 
-def save_config(config: Dict[str, Any], config_path: str = "config.json") -> bool:
-    """Persists current configuration to JSON file."""
-    try:
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
-        return True
-    except IOError as e:
-        print(f"Error: could not save config: {e}")
-        return False
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
+        """Retrieves a configuration value by key."""
+        return self.settings.get(key, default)
+
+    def update(self, key: str, value: Any) -> None:
+        """Updates a setting and validates type consistency."""
+        self.settings[key] = value
+        self.save()
