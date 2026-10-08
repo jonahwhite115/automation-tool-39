@@ -1,42 +1,30 @@
 import time
-from typing import Dict, List, Any, Callable
+import random
+from typing import Callable, Any, Optional
 
-class GameEventProcessor:
-    """Processes real-time game events and coordinates macro executions."""
+def execute_with_retry(func: Callable, retries: int = 3, delay: float = 1.0) -> Any:
+    """
+    Executes a function with exponential backoff for network-related tasks.
+    Suitable for intermittent gaming API connectivity issues.
+    """
+    last_exception = None
+    
+    for attempt in range(retries):
+        try:
+            return func()
+        except (ConnectionError, TimeoutError) as e:
+            last_exception = e
+            wait_time = delay * (2 ** attempt) + random.uniform(0, 0.1)
+            time.sleep(wait_time)
+            continue
+    
+    raise last_exception or Exception("network operation failed after retries")
 
-    def __init__(self, cooldown_seconds: float = 0.1):
-        self.cooldown_seconds = cooldown_seconds
-        self.event_handlers: Dict[str, List[Callable[[Dict[str, Any]], None]]] = {}
-        self.last_execution_time: float = 0.0
-
-    def register_handler(self, event_type: str, handler: Callable[[Dict[str, Any]], None]) -> None:
-        """Registers a callback handler for a specific game event type."""
-        if event_type not in self.event_handlers:
-            self.event_handlers[event_type] = []
-        self.event_handlers[event_type].append(handler)
-
-    def dispatch(self, event_type: str, data: Dict[str, Any]) -> bool:
-        """Dispatches an event to all registered handlers if cooldown has expired."""
-        current_time = time.time()
-        if current_time - self.last_execution_time < self.cooldown_seconds:
-            return False
-
-        handlers = self.event_handlers.get(event_type, [])
-        if not handlers:
-            return False
-
-        for handler in handlers:
-            handler(data)
-
-        self.last_execution_time = current_time
-        return True
-
-    def process_batch(self, events: List[Dict[str, Any]]) -> int:
-        """Processes a list of queued game events sequentially."""
-        processed_count = 0
-        for event in events:
-            event_type = event.get("type")
-            event_data = event.get("data", {})
-            if event_type and self.dispatch(event_type, event_data):
-                processed_count += 1
-        return processed_count
+def fetch_game_data(api_client: Any, endpoint: str) -> dict:
+    """
+    Wrapper for fetching game data using retry logic.
+    """
+    def request_call():
+        return api_client.get(endpoint)
+    
+    return execute_with_retry(request_call)
