@@ -1,30 +1,31 @@
-import time
-import random
-import logging
+import json
+from typing import Dict, Any, Optional
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('automation-tool-39')
+def sanitize_game_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Cleans and normalizes incoming gaming session metrics."""
+    sanitized = {}
+    
+    # filter out negative scores or corrupted timestamps
+    for key, value in raw_data.items():
+        if key == 'score' and isinstance(value, (int, float)):
+            sanitized[key] = max(0, value)
+        elif key == 'player_id' and isinstance(value, str):
+            sanitized[key] = value.strip().lower()
+        else:
+            sanitized[key] = value
+            
+    return sanitized
 
-def click_at_coordinates(x: int, y: int, delay: float = 0.5):
-    """Simulates mouse click at given screen coordinates."""
-    logger.info(f"clicking at ({x}, {y})")
-    time.sleep(delay)
+def export_session_log(filepath: str, data: Dict[str, Any]) -> bool:
+    """Persists processed session data to local storage."""
+    try:
+        with open(filepath, 'a') as f:
+            f.write(json.dumps(data) + '\n')
+        return True
+    except (IOError, TypeError):
+        return False
 
-def random_jitter(base_value: int, range_val: int = 5) -> int:
-    """Adds random noise to coordinate values for human-like movement."""
-    return base_value + random.randint(-range_val, range_val)
-
-def wait_for_cooldown(seconds: int):
-    """Handles pauses between game actions."""
-    logger.info(f"waiting for {seconds} seconds cooldown")
-    time.sleep(seconds)
-
-def retry_operation(func, retries: int = 3, *args, **kwargs):
-    """Executes function with basic retry mechanism for game stability."""
-    for attempt in range(retries):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"attempt {attempt + 1} failed: {e}")
-            time.sleep(1)
-    raise RuntimeError("operation failed after max retries")
+def validate_player_payload(data: Dict[str, Any]) -> bool:
+    """Ensures required fields exist for backend ingest."""
+    required = {'player_id', 'score', 'timestamp'}
+    return all(key in data for key in required)
