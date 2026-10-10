@@ -1,32 +1,38 @@
-from typing import Dict, Any, Union
+import logging
 
-def validate_game_state(data: Dict[str, Any]) -> bool:
-    """Validates player session data structure."""
-    required_keys = {'player_id', 'level', 'score', 'timestamp'}
+# Input validation rules for game data packets
+
+def validate_game_input(data: dict) -> bool:
+    """
+    Validates player input structure and value constraints
+    before processing in the main loop.
+    """
+    required_keys = {'player_id', 'action', 'timestamp'}
     
-    if not isinstance(data, dict):
+    # Check for missing keys
+    if not all(key in data for key in required_keys):
+        logging.error("Invalid packet structure received")
+        return False
+    
+    # Validate data types
+    if not isinstance(data['player_id'], int):
         return False
         
-    if not required_keys.issubset(data.keys()):
+    # Restrict action commands to allowed set
+    allowed_actions = {'move', 'attack', 'interact', 'idle'}
+    if data['action'] not in allowed_actions:
+        logging.warning(f"Unknown action attempt: {data['action']}")
         return False
-        
-    if data['score'] < 0:
+
+    # Timestamp sanity check
+    if data['timestamp'] <= 0:
         return False
         
     return True
 
-def sanitize_input_metrics(metrics: Dict[str, Union[int, float]]) -> Dict[str, Union[int, float]]:
-    """Filters negative values from game metrics."""
-    return {k: max(0, v) for k, v in metrics.items() if isinstance(v, (int, float))}
-
-def check_bounds(value: float, min_val: float, max_val: float) -> float:
-    """Clamps coordinate values for game map bounds."""
-    return max(min_val, min(value, max_val))
-
-def parse_server_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Extracts and cleans game event data."""
-    return {
-        "id": str(payload.get("uuid", "unknown")),
-        "active": bool(payload.get("status", False)),
-        "latency": float(payload.get("ping", 0.0))
-    }
+def sanitize_input(user_input: str) -> str:
+    """
+    Sanitizes string inputs to prevent injection
+    or formatting issues in game logs.
+    """
+    return str(user_input).strip()[:128]
