@@ -1,43 +1,52 @@
+"""Game event and action input handler for automation routines."""
+
 import time
-import random
-import logging
+from typing import Dict, List, Optional, Union, Any
 
-# Configure basic logger for automation-tool-39
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('automation-tool-39')
 
-def sleep_randomly(min_sec=1.0, max_sec=3.0):
-    """Simulates human-like delays to avoid detection."""
-    delay = random.uniform(min_sec, max_sec)
-    time.sleep(delay)
-    return delay
+class GameActionHandler:
+    """Manages execution and queueing of game actions and macro sequences."""
 
-def validate_game_state(state, expected_keys):
-    """Checks if all required keys exist in the game state dict."""
-    if not isinstance(state, dict):
-        return False
-    return all(key in state for key in expected_keys)
+    def __init__(self, execution_delay: float = 0.05) -> None:
+        """Initialize action handler with default timing delays."""
+        self.execution_delay: float = execution_delay
+        self.action_queue: List[Dict[str, Any]] = []
+        self.history: List[Dict[str, Any]] = []
 
-def format_coords(x, y):
-    """Standardizes coordinate tuples for interaction events."""
-    return (int(x), int(y))
+    def register_action(
+        self, action_type: str, key_code: str, duration: float = 0.1
+    ) -> Dict[str, Union[str, float]]:
+        """Register a game action to the queue.
 
-def retry_operation(func, retries=3, delay=1):
-    """Decorator-like execution wrapper for volatile game actions."""
-    last_error = None
-    for i in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            last_error = e
-            logger.warning(f"Attempt {i+1} failed, retrying in {delay}s...")
-            time.sleep(delay)
-    logger.error(f"Operation failed after {retries} attempts: {last_error}")
-    return None
+        Args:
+            action_type: Category of action (e.g., 'keypress', 'macro').
+            key_code: Target key or button identifier.
+            duration: Hold time for key action in seconds.
 
-def log_event(message, level="info"):
-    """Standardized logging wrapper for automation tracking."""
-    if level == "info":
-        logger.info(f"[GAME_EVENT] {message}")
-    elif level == "error":
-        logger.error(f"[GAME_ERROR] {message}")
+        Returns:
+            Dict containing details of the queued action.
+        """
+        action_data: Dict[str, Union[str, float]] = {
+            "type": action_type,
+            "key": key_code,
+            "duration": duration,
+            "timestamp": time.time(),
+        }
+        self.action_queue.append(action_data)
+        return action_data
+
+    def execute_next(self) -> Optional[Dict[str, Any]]:
+        """Process and execute the next queued game action."""
+        if not self.action_queue:
+            return None
+
+        action = self.action_queue.pop(0)
+        time.sleep(self.execution_delay)
+        self.history.append(action)
+        return action
+
+    def clear_queue(self) -> int:
+        """Clear all pending game actions from the execution queue."""
+        count = len(self.action_queue)
+        self.action_queue.clear()
+        return count
