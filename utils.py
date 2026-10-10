@@ -1,33 +1,34 @@
-import time
-import functools
+import os
 import logging
+from pathlib import Path
+from typing import List
 
-logging.basicConfig(level=logging.INFO)
+# Configure logger for automation tasks
 logger = logging.getLogger('automation-tool-39')
 
-def retry_network_op(retries=3, delay=2, backoff=2):
-    """Decorator for retrying network operations with exponential backoff."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            current_delay = delay
-            for attempt in range(retries):
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    if attempt == retries - 1:
-                        logger.error(f"Failed after {retries} attempts: {e}")
-                        raise
-                    
-                    logger.warning(f"Attempt {attempt + 1} failed. Retrying in {current_delay}s...")
-                    time.sleep(current_delay)
-                    current_delay *= backoff
-        return wrapper
-    return decorator
+def get_game_directories(base_path: str) -> List[Path]:
+    """Retrieve valid game installation directories."""
+    root = Path(base_path)
+    if not root.exists():
+        logger.error(f"Path not found: {base_path}")
+        return []
+    
+    return [d for d in root.iterdir() if d.is_dir() and (d / 'game.exe').exists()]
 
-@retry_network_op(retries=3, delay=1)
-def fetch_game_data(url):
-    """Example network call for gaming data."""
-    # Logic for actual request would be here
-    logger.info(f"Fetching data from {url}")
-    return True
+def cleanup_temp_files(directory: str, pattern: str = '*.tmp') -> int:
+    """Remove temporary files to free up disk space."""
+    count = 0
+    path = Path(directory)
+    
+    for file in path.glob(pattern):
+        try:
+            file.unlink()
+            count += 1
+        except OSError as e:
+            logger.warning(f"Failed to remove {file}: {e}")
+            
+    return count
+
+def validate_game_config(config: dict, required_keys: List[str]) -> bool:
+    """Verify all mandatory configuration keys exist."""
+    return all(key in config for key in required_keys)
