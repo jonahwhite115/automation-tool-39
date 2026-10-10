@@ -1,51 +1,47 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 # automation-tool-39
 
-`automation-tool-39` is a lightweight Python automation framework designed to streamline resource harvesting and inventory management in modern PC RPGs. By combining real-time computer vision with randomized input simulation, it automates repetitive gameplay routines safely and efficiently.
+A high-performance Python automation framework designed to streamline repetitive tasks in desktop-based MMORPGs. It utilizes computer vision and low-latency input simulation to provide reliable gameplay assistance without interfering with game memory.
 
 ## Features
 
-- **OCR Inventory & Market Scanning:** Automatically parses item stats, stack quantities, and vendor prices directly from the game UI using OpenCV.
-- **Humanized Input Emulation:** Generates natural Bezier curve mouse movements and randomized micro-delays to prevent pattern detection.
-- **State-Aware Fail-Safes:** Triggers immediate system pause or logout upon detecting lower health thresholds, player trade requests, or disconnected servers.
-- **Multi-Client Session Handling:** Supports running independent automation profiles across multiple concurrently running game instances.
+*   **Pixel-Perfect Detection:** Uses OpenCV-based template matching to identify interactive UI elements, inventory items, and spawn points in real-time.
+*   **Human-like Input Simulation:** Employs randomized mouse trajectory algorithms and variable click intervals to mimic authentic human interaction and avoid detection heuristics.
+*   **Asynchronous Task Queue:** Built with `asyncio` to manage multiple background processes, allowing for simultaneous resource gathering and combat rotation monitoring.
+*   **Configuration Presets:** Supports JSON-based profiles to easily switch between different game client resolutions or character class settings.
 
 ## Installation
 
-Ensure you have Python 3.9 or higher installed alongside Tesseract OCR on your system.
+Ensure you have [Python 3.10+](https://python.org) installed on your system.
 
 ```bash
+# Clone the repository
 git clone https://github.com/Developer/automation-tool-39.git
 cd automation-tool-39
+
+# Create a virtual environment and install dependencies
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Basic Usage
+## Usage
 
-Run a pre-configured crafting loop on an active game process:
+Define your target window title and task parameters in `config.json`, then launch the automation engine:
 
 ```python
-from automation_tool_39 import GameBot, WindowManager
+from automation import BotEngine
 
-# Bind to the target game window
-window = WindowManager.find_window("FantasyRPG Client")
-bot = GameBot(target_window=window, capture_fps=30)
+# Initialize with profile
+bot = BotEngine(config_path="configs/gold_farm_v1.json")
 
-# Execute automated loop
-@bot.on_frame
-def crafting_routine(frame):
-    if bot.vision.find("craft_button.png", confidence=0.88):
-        bot.input.click("craft_button.png")
-        bot.vision.wait_until_present("craft_complete.png", timeout=5)
-        bot.input.press_key("e")
-
-if __name__ == "__main__":
-    bot.start()
+# Start the event loop
+bot.start()
 ```
 
-## License
+For advanced users, you can pass custom hooks to the `on_event` callback to trigger alerts via Telegram or Discord when specific in-game events occur.
 
-Distributed under the MIT License. See `LICENSE` for more information.
+## Disclaimer
+This tool is intended for educational purposes only. Use of automation software may violate the Terms of Service of your target game. Use at your own risk.
+
+## License
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
