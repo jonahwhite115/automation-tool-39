@@ -1,28 +1,31 @@
-from typing import List, Optional, Dict, Any
 import time
+import functools
+import logging
+from typing import Callable, Any
 
-def calculate_cooldown(last_action_time: float, interval: float) -> float:
-    """Calculates remaining time until next permitted action."""
-    elapsed = time.time() - last_action_time
-    return max(0.0, interval - elapsed)
+logger = logging.getLogger(__name__)
 
-def format_player_stats(stats: Dict[str, Any], username: str) -> str:
-    """Converts raw stats dictionary into a readable status string."""
-    level = stats.get('level', 1)
-    xp = stats.get('xp', 0)
-    return f"[{username}] Level: {level} | XP: {xp}"
+def retry_network_operation(max_attempts: int = 3, delay: float = 2.0):
+    """Decorator to retry network calls on failure."""
+    def decorator(func: Callable):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            last_exception = None
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError) as e:
+                    last_exception = e
+                    logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {e}")
+                    if attempt < max_attempts - 1:
+                        time.sleep(delay * (2 ** attempt))
+            logger.error(f"Operation {func.__name__} failed after {max_attempts} attempts")
+            raise last_exception
+        return wrapper
+    return decorator
 
-def filter_valid_targets(targets: List[Dict[str, Any]], min_level: int) -> List[Dict[str, Any]]:
-    """Filters list of gaming targets based on level requirements."""
-    return [t for t in targets if t.get('level', 0) >= min_level]
-
-def generate_retry_delay(attempt: int, base_delay: float = 1.0) -> float:
-    """Calculates exponential backoff delay for network requests."""
-    return base_delay * (2 ** (attempt - 1))
-
-def get_session_duration(start_time: float) -> str:
-    """Formats elapsed session time into HH:MM:SS string."""
-    seconds = int(time.time() - start_time)
-    hours, remainder = divmod(seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{hours:02}:{minutes:02}:{seconds:02}"
+@retry_network_operation(max_attempts=3, delay=1.0)
+def fetch_game_data(endpoint: str):
+    """Simulated network fetch operation for automation tool."""
+    # Example logic for interaction with game servers
+    pass
