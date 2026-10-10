@@ -1,49 +1,30 @@
-import os
 import logging
 from logging.handlers import RotatingFileHandler
+import os
 
-def setup_logger(name: str = "game_bot", log_file: str = "logs/automation.log") -> logging.Logger:
-    """
-    Configures a standard rotating file logger and console output.
-    Designed for persistent tracking of gaming automation tasks.
-    """
+def setup_logger(name: str = 'automation-tool-39') -> logging.Logger:
+    """Configures a rotating file logger for gaming automation tasks."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
-    if logger.hasHandlers():
-        return logger
+    # Ensure logs directory exists
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
 
-    # Shared formatter for standard, readable gaming bot output
-    log_format = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+    # Setup rotation: 5MB per file, keep 3 backups
+    handler = RotatingFileHandler(
+        'logs/automation.log', 
+        maxBytes=5 * 1024 * 1024, 
+        backupCount=3
     )
-
-    # Console output for quick manual tracking
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(log_format)
-    logger.addHandler(console_handler)
-
-    # Ensure logs directory exists before mounting rotating file handler
-    log_dir = os.path.dirname(log_file)
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    # Rotating handler setup (limits to 3 backup logs of 2MB each)
-    try:
-        file_handler = RotatingFileHandler(
-            log_file,
-            maxBytes=2 * 1024 * 1024,  # 2MB limits
-            backupCount=3,
-            encoding="utf-8"
-        )
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(log_format)
-        logger.addHandler(file_handler)
-    except (OSError, PermissionError) as error:
-        logger.warning(f"Could not setup rotating file log, falling back to console only: {error}")
-
+    
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    handler.setFormatter(formatter)
+    
+    # Prevent duplicate handlers if re-initialized
+    if not logger.handlers:
+        logger.addHandler(handler)
+        
     return logger
-
-game_logger = setup_logger()
