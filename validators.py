@@ -1,38 +1,30 @@
-import logging
+from typing import Dict, Any, Optional
 
-# Input validation rules for game data packets
-
-def validate_game_input(data: dict) -> bool:
+def validate_game_stats(data: Dict[str, Any]) -> bool:
     """
-    Validates player input structure and value constraints
-    before processing in the main loop.
+    Ensures player stats contain required keys and valid data types
+    for the automation engine pipeline.
     """
-    required_keys = {'player_id', 'action', 'timestamp'}
+    required_fields = {'player_id': str, 'level': int, 'xp': int}
     
-    # Check for missing keys
-    if not all(key in data for key in required_keys):
-        logging.error("Invalid packet structure received")
-        return False
-    
-    # Validate data types
-    if not isinstance(data['player_id'], int):
-        return False
+    try:
+        for field, expected_type in required_fields.items():
+            if field not in data or not isinstance(data[field], expected_type):
+                return False
         
-    # Restrict action commands to allowed set
-    allowed_actions = {'move', 'attack', 'interact', 'idle'}
-    if data['action'] not in allowed_actions:
-        logging.warning(f"Unknown action attempt: {data['action']}")
+        # XP cannot be negative for game progression
+        if data['xp'] < 0:
+            return False
+            
+        return True
+    except (KeyError, TypeError):
         return False
 
-    # Timestamp sanity check
-    if data['timestamp'] <= 0:
-        return False
-        
-    return True
-
-def sanitize_input(user_input: str) -> str:
+def sanitize_input(value: str) -> str:
     """
-    Sanitizes string inputs to prevent injection
-    or formatting issues in game logs.
+    Removes potentially malicious characters from chat or username input
+    to prevent injection during processing.
     """
-    return str(user_input).strip()[:128]
+    forbidden = ['<', '>', ';', '\'', '"']
+    sanitized = ''.join(c for c in value if c not in forbidden)
+    return sanitized[:64].strip()
