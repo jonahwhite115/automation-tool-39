@@ -1,33 +1,33 @@
-import os
+from typing import Final, Dict, List
 
-# Configuration constants for automation-tool-39
-DEFAULT_TIMEOUT = 30
-MAX_RETRIES = 3
+# Configuration for gaming telemetry
+DEFAULT_POLL_RATE: Final[float] = 0.5
+MAX_RETRY_ATTEMPTS: Final[int] = 3
 
-# Gaming environment paths
-GAME_EXECUTABLE_PATH = os.getenv("GAME_PATH", "/usr/local/bin/game")
-CONFIG_FILE = "config.json"
-
-# Error message mapping for edge cases
-ERROR_MESSAGES = {
-    "MISSING_FILE": "The required game configuration file was not found.",
-    "TIMEOUT_EXCEEDED": "The game process failed to respond within limits.",
-    "INVALID_STATE": "An illegal state transition was detected in the game loop.",
-    "PERMISSION_DENIED": "Insufficient system privileges to modify game memory.",
-    "PROCESS_NOT_RUNNING": "Target game process is not currently active."
+# Standardized player status codes
+STATUS_CODES: Final[Dict[int, str]] = {
+    0: "OFFLINE",
+    1: "IN_LOBBY",
+    2: "IN_GAME",
+    3: "MATCHMAKING"
 }
 
-# Supported resolutions for display parsing
-SUPPORTED_RESOLUTIONS = [
-    (1920, 1080),
-    (2560, 1440),
-    (3840, 2160)
+# Validation constraints for game assets
+SUPPORTED_PLATFORMS: Final[List[str]] = ["pc", "ps5", "xbox", "switch"]
+ASSET_TIMEOUT_SECONDS: Final[int] = 30
+
+# Logging categories for automation tool
+LOG_CATEGORIES: Final[List[str]] = [
+    "NETWORK",
+    "ASSET_SYNC",
+    "PLAYER_STATE",
+    "ERROR_HANDLING"
 ]
 
-# Network constraints
-MAX_LATENCY_MS = 150
-CONNECTION_RETRY_DELAY = 5
+def get_status_label(code: int) -> str:
+    """Retrieve human-readable status from integer code."""
+    return STATUS_CODES.get(code, "UNKNOWN")
 
-def get_error_message(code: str) -> str:
-    """Retrieve standardized error message or fallback string."""
-    return ERROR_MESSAGES.get(code, "An unknown internal error occurred.")
+if __name__ == "__main__":
+    # Verification of constants integration
+    print(f"Active platforms: {', '.join(SUPPORTED_PLATFORMS)}")
