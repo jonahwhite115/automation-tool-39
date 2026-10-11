@@ -1,52 +1,45 @@
-"""Game event and action input handler for automation routines."""
-
 import time
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Any, Callable
 
 
-class GameActionHandler:
-    """Manages execution and queueing of game actions and macro sequences."""
+class GameEventHandler:
+    """Manages and dispatches automated actions based on game state events."""
 
-    def __init__(self, execution_delay: float = 0.05) -> None:
-        """Initialize action handler with default timing delays."""
-        self.execution_delay: float = execution_delay
-        self.action_queue: List[Dict[str, Any]] = []
-        self.history: List[Dict[str, Any]] = []
+    def __init__(self, cooldown: float = 0.5) -> None:
+        self.cooldown: float = cooldown
+        self._handlers: Dict[str, List[Callable[[Dict[str, Any]], None]]] = {}
+        self._last_trigger_times: Dict[str, float] = {}
 
-    def register_action(
-        self, action_type: str, key_code: str, duration: float = 0.1
-    ) -> Dict[str, Union[str, float]]:
-        """Register a game action to the queue.
+    def register_listener(
+        self, event_type: str, callback: Callable[[Dict[str, Any]], None]
+    ) -> None:
+        """Registers a callback function to be executed when a specific event occurs."""
+        if event_type not in self._handlers:
+            self._handlers[event_type] = []
+        self._handlers[event_type].append(callback)
 
-        Args:
-            action_type: Category of action (e.g., 'keypress', 'macro').
-            key_code: Target key or button identifier.
-            duration: Hold time for key action in seconds.
+    def trigger_event(self, event_type: str, payload: Dict[str, Any]) -> bool:
+        """Triggers event processing if the event cooldown period has passed."""
+        current_time = time.time()
+        last_time = self._last_trigger_times.get(event_type, 0.0)
 
-        Returns:
-            Dict containing details of the queued action.
-        """
-        action_data: Dict[str, Union[str, float]] = {
-            "type": action_type,
-            "key": key_code,
-            "duration": duration,
-            "timestamp": time.time(),
-        }
-        self.action_queue.append(action_data)
-        return action_data
+        if current_time - last_time < self.cooldown:
+            return False
 
-    def execute_next(self) -> Optional[Dict[str, Any]]:
-        """Process and execute the next queued game action."""
-        if not self.action_queue:
-            return None
+        self._last_trigger_times[event_type] = current_time
 
-        action = self.action_queue.pop(0)
-        time.sleep(self.execution_delay)
-        self.history.append(action)
-        return action
+        if event_type in self._handlers:
+            for listener in self._handlers[event_type]:
+                listener(payload)
+            return True
 
-    def clear_queue(self) -> int:
-        """Clear all pending game actions from the execution queue."""
-        count = len(self.action_queue)
-        self.action_queue.clear()
-        return count
+        return False
+
+    def clear_listeners(self, event_type: Optional[str] = None) -> None:
+        """Clears listeners for a specific event type, or all event types if None."""
+        if event_type is None:
+            self._handlers.clear()
+            self._last_trigger_times.clear()
+        elif event_type in self._handlers:
+            del self._handlers[event_type]
+            self._last_trigger_times.pop(event_type, None)
