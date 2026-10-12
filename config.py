@@ -1,39 +1,33 @@
-import json
-from typing import Dict, Any, Optional
-from pathlib import Path
+import os
+from typing import Dict, Any
+
+# Configuration settings for automation-tool-39
+# Handles game environment paths and timing thresholds
+
+DEFAULT_CONFIG = {
+    "game_path": "C:\\Games\\TargetApp.exe",
+    "check_interval": 5.0,
+    "retry_attempts": 3,
+    "log_level": "INFO"
+}
+
+def load_settings(path: str = "settings.json") -> Dict[str, Any]:
+    """Loads configuration from external json if present."""
+    if os.path.exists(path):
+        try:
+            import json
+            with open(path, 'r') as f:
+                return {**DEFAULT_CONFIG, **json.load(f)}
+        except (IOError, ValueError):
+            return DEFAULT_CONFIG
+    return DEFAULT_CONFIG
 
 class GameConfig:
-    """Handles loading and persistence of automation settings."""
+    def __init__(self):
+        self.settings = load_settings()
+        self.game_path = self.settings.get("game_path")
+        self.interval = self.settings.get("check_interval")
 
-    def __init__(self, config_path: str = "config.json") -> None:
-        self.path: Path = Path(config_path)
-        self.settings: Dict[str, Any] = self._load_default_settings()
-
-    def _load_default_settings(self) -> Dict[str, Any]:
-        """Provides default automation configuration structure."""
-        return {
-            "fps_limit": 60,
-            "auto_loot": True,
-            "macro_delay_ms": 150,
-            "window_title": "GameClient"
-        }
-
-    def load(self) -> None:
-        """Reads configuration from the filesystem."""
-        if self.path.exists():
-            with open(self.path, "r", encoding="utf-8") as f:
-                self.settings.update(json.load(f))
-
-    def save(self) -> None:
-        """Persists current configuration state to disk."""
-        with open(self.path, "w", encoding="utf-8") as f:
-            json.dump(self.settings, f, indent=4)
-
-    def get(self, key: str, default: Optional[Any] = None) -> Any:
-        """Retrieves a configuration value by key."""
-        return self.settings.get(key, default)
-
-    def update(self, key: str, value: Any) -> None:
-        """Updates a setting and validates type consistency."""
-        self.settings[key] = value
-        self.save()
+    def validate(self) -> bool:
+        """Verify game path accessibility."""
+        return os.path.exists(self.game_path) if self.game_path else False
