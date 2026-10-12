@@ -1,30 +1,34 @@
-from typing import Dict, Any, Optional
+import logging
 
-def validate_game_stats(data: Dict[str, Any]) -> bool:
-    """
-    Ensures player stats contain required keys and valid data types
-    for the automation engine pipeline.
-    """
-    required_fields = {'player_id': str, 'level': int, 'xp': int}
+logger = logging.getLogger(__name__)
+
+def validate_game_config(config: dict) -> bool:
+    """Validates game configuration keys and value constraints."""
+    required_keys = ['resolution', 'fps_cap', 'server_region']
     
     try:
-        for field, expected_type in required_fields.items():
-            if field not in data or not isinstance(data[field], expected_type):
-                return False
+        if not isinstance(config, dict):
+            raise ValueError("Configuration must be a dictionary")
+            
+        for key in required_keys:
+            if key not in config:
+                raise KeyError(f"Missing required configuration: {key}")
         
-        # XP cannot be negative for game progression
-        if data['xp'] < 0:
-            return False
+        if not (30 <= config.get('fps_cap', 0) <= 240):
+            logger.warning("fps_cap outside standard range, clamping applied")
+            config['fps_cap'] = max(30, min(240, config['fps_cap']))
             
         return True
-    except (KeyError, TypeError):
+        
+    except (ValueError, KeyError, TypeError) as e:
+        logger.error(f"validation failure: {e}")
         return False
 
-def sanitize_input(value: str) -> str:
-    """
-    Removes potentially malicious characters from chat or username input
-    to prevent injection during processing.
-    """
-    forbidden = ['<', '>', ';', '\'', '"']
-    sanitized = ''.join(c for c in value if c not in forbidden)
-    return sanitized[:64].strip()
+def sanitize_input(user_input: str) -> str:
+    """Cleans raw input to prevent injection in gaming commands."""
+    if not isinstance(user_input, str):
+        return ""
+    
+    # Remove potential control characters and whitespace
+    sanitized = "".join(char for char in user_input if char.isalnum() or char in [' ', '_'])
+    return sanitized.strip()[:32]
