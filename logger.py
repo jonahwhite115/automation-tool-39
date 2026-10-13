@@ -1,33 +1,31 @@
 import logging
-from logging.handlers import RotatingFileHandler
-import os
+import sys
+from typing import Optional
 
-def setup_logger(name: str = 'automation-tool-39', log_file: str = 'app.log') -> logging.Logger:
-    """Configures a rotating file logger for gaming automation."""
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+class AutomationLogger:
+    """Custom logger for automation-tool-39 game events."""
 
-    # Prevent duplicate handlers if function is called multiple times
-    if logger.hasHandlers():
-        logger.handlers.clear()
+    def __init__(self, name: str, level: int = logging.INFO) -> None:
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(level)
+        
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
-    # File rotation: 5MB per file, keep 3 backups
-    handler = RotatingFileHandler(
-        log_file, 
-        maxBytes=5 * 1024 * 1024, 
-        backupCount=3
-    )
-    
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    handler.setFormatter(formatter)
-    
-    logger.addHandler(handler)
-    
-    # Also log to console for debugging
-    console = logging.StreamHandler()
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-    
-    return logger
+    def info(self, message: str) -> None:
+        """Log informational game status updates."""
+        self.logger.info(message)
+
+    def error(self, message: str, exc_info: Optional[Exception] = None) -> None:
+        """Log critical failures during execution."""
+        self.logger.error(message, exc_info=exc_info)
+
+    def debug(self, message: str) -> None:
+        """Log verbose data for troubleshooting."""
+        self.logger.debug(message)
+
+def get_logger(name: str) -> AutomationLogger:
+    """Factory function to instantiate tool loggers."""
+    return AutomationLogger(name)
