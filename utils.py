@@ -1,34 +1,31 @@
-import os
+import time
+import functools
 import logging
-from pathlib import Path
-from typing import List
+from typing import Callable, Any
 
-# Configure logger for automation tasks
-logger = logging.getLogger('automation-tool-39')
+# Configure logger for automation-tool-39 network tasks
+logger = logging.getLogger("automation-tool-39")
 
-def get_game_directories(base_path: str) -> List[Path]:
-    """Retrieve valid game installation directories."""
-    root = Path(base_path)
-    if not root.exists():
-        logger.error(f"Path not found: {base_path}")
-        return []
-    
-    return [d for d in root.iterdir() if d.is_dir() and (d / 'game.exe').exists()]
+def retry_network_operation(max_retries: int = 3, delay: float = 1.0):
+    """Decorator for retrying network operations on failure."""
+    def decorator(func: Callable):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
+                    time.sleep(delay)
+            logger.error(f"Operation failed after {max_retries} attempts: {last_exception}")
+            raise last_exception
+        return wrapper
+    return decorator
 
-def cleanup_temp_files(directory: str, pattern: str = '*.tmp') -> int:
-    """Remove temporary files to free up disk space."""
-    count = 0
-    path = Path(directory)
-    
-    for file in path.glob(pattern):
-        try:
-            file.unlink()
-            count += 1
-        except OSError as e:
-            logger.warning(f"Failed to remove {file}: {e}")
-            
-    return count
-
-def validate_game_config(config: dict, required_keys: List[str]) -> bool:
-    """Verify all mandatory configuration keys exist."""
-    return all(key in config for key in required_keys)
+# Example usage:
+# @retry_network_operation(max_retries=3, delay=2.0)
+# def fetch_game_data(url: str):
+#     # Network request logic here
+#     pass
