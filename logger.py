@@ -1,31 +1,37 @@
 import logging
-import sys
-from typing import Optional
+from logging.handlers import RotatingFileHandler
+import os
 
-class AutomationLogger:
-    """Custom logger for automation-tool-39 game events."""
+def setup_logger(name: str = 'automation-tool-39', log_file: str = 'app.log'):
+    """Initializes a rotating logger for automation tasks."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
 
-    def __init__(self, name: str, level: int = logging.INFO) -> None:
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(level)
-        
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # Prevent duplicate handlers if re-initialized
+    if not logger.handlers:
+        # Ensure log directory exists
+        os.makedirs('logs', exist_ok=True)
+        log_path = os.path.join('logs', log_file)
+
+        # 5MB per file, keep 3 backups
+        handler = RotatingFileHandler(
+            log_path, 
+            maxBytes=5 * 1024 * 1024, 
+            backupCount=3
+        )
+
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
         handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
+        logger.addHandler(handler)
 
-    def info(self, message: str) -> None:
-        """Log informational game status updates."""
-        self.logger.info(message)
+        # Console output for real-time monitoring
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        logger.addHandler(console)
 
-    def error(self, message: str, exc_info: Optional[Exception] = None) -> None:
-        """Log critical failures during execution."""
-        self.logger.error(message, exc_info=exc_info)
+    return logger
 
-    def debug(self, message: str) -> None:
-        """Log verbose data for troubleshooting."""
-        self.logger.debug(message)
-
-def get_logger(name: str) -> AutomationLogger:
-    """Factory function to instantiate tool loggers."""
-    return AutomationLogger(name)
+# Instantiate shared logger for the tool
+logger = setup_logger()
