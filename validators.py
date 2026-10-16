@@ -1,30 +1,27 @@
 import re
+from typing import Any, Optional
 
+def validate_input_data(data: Any, min_val: int = 0, max_val: int = 9999) -> bool:
+    """Ensures game configuration values are within expected bounds."""
+    if not isinstance(data, int):
+        return False
+    return min_val <= data <= max_val
 
-def validate_player_id(player_id: str) -> bool:
-    """Validate gaming platform user ID format."""
-    # Matches alphanumeric, 3-16 chars
-    pattern = re.compile(r'^[a-zA-Z0-9_]{3,16}$')
-    return bool(pattern.match(player_id))
+def validate_player_name(name: str) -> bool:
+    """Validates player aliases using regex patterns."""
+    if not isinstance(name, str) or len(name) < 3:
+        return False
+    pattern = re.compile(r"^[a-zA-Z0-9_-]+$")
+    return bool(pattern.match(name))
 
+def sanitize_config_key(key: str) -> Optional[str]:
+    """Removes illegal characters from configuration keys."""
+    sanitized = re.sub(r'[^a-zA-Z0-9_]', '', key)
+    return sanitized if sanitized else None
 
-def validate_score_range(score: int, min_val: int = 0, max_val: int = 1000000) -> bool:
-    """Ensure game score is within realistic bounds."""
-    return min_val <= score <= max_val
-
-
-def sanitize_game_metadata(data: dict) -> dict:
-    """Clean dictionary keys and ensure valid types."""
-    sanitized = {}
-    for key, value in data.items():
-        # Remove non-alphanumeric chars from keys
-        clean_key = re.sub(r'[^a-zA-Z0-9_]', '', str(key))
-        if isinstance(value, (int, float, str, bool)):
-            sanitized[clean_key] = value
-    return sanitized
-
-
-def validate_region_code(code: str) -> bool:
-    """Check if region code follows ISO-like standard."""
-    regions = {'US', 'EU', 'AP', 'LATAM', 'CN'}
-    return code.upper() in regions
+# Usage in main loop:
+# def process_tick(payload):
+#     if validate_input_data(payload['ticks']) and validate_player_name(payload['name']):
+#         execute_action(payload)
+#     else:
+#         log_error('invalid input detected')
