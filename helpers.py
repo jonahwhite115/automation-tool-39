@@ -1,47 +1,28 @@
-import random
-import time
-from typing import Tuple, Dict, Any
+from typing import List, Dict, Optional
 
+def calculate_win_rate(wins: int, total_games: int) -> float:
+    """Calculates win percentage based on match history."""
+    if total_games == 0:
+        return 0.0
+    return round((wins / total_games) * 100, 2)
 
-def human_delay(min_seconds: float = 0.5, max_seconds: float = 1.5) -> None:
-    """Simulate human reaction time with a randomized delay."""
-    delay = random.uniform(min_seconds, max_seconds)
-    time.sleep(delay)
+def format_player_stats(player_name: str, stats: Dict[str, int]) -> str:
+    """Converts player stats dictionary into a display-ready string."""
+    level = stats.get("level", 1)
+    xp = stats.get("xp", 0)
+    return f"Player {player_name}: Lvl {level} ({xp} XP)"
 
+def filter_active_sessions(sessions: List[Dict[str, any]]) -> List[Dict[str, any]]:
+    """Returns only active sessions from a provided list."""
+    return [s for s in sessions if s.get("is_active", False)]
 
-def calculate_xp_required(current_level: int, base_xp: int = 100, growth_factor: float = 1.5) -> int:
-    """Calculate total XP required for the specified level."""
-    if current_level < 1:
-        return 0
-    return int(base_xp * (current_level ** growth_factor))
+def validate_game_config(config: Dict[str, str]) -> bool:
+    """Ensures all mandatory keys exist in the configuration."""
+    required = ["server_id", "region", "version"]
+    return all(key in config for key in required)
 
-
-def calculate_center_point(region: Tuple[int, int, int, int]) -> Tuple[int, int]:
-    """
-    Calculate the center coordinate (X, Y) from a region box (left, top, width, height).
-    """
-    left, top, width, height = region
-    center_x = left + (width // 2)
-    center_y = top + (height // 2)
-    return center_x, center_y
-
-
-def format_cooldown(seconds_remaining: float) -> str:
-    """Format remaining seconds into readable MM:SS format."""
-    if seconds_remaining <= 0:
-        return "Ready"
-    minutes = int(seconds_remaining) // 60
-    seconds = int(seconds_remaining) % 60
-    return f"{minutes:02d}:{seconds:02d}"
-
-
-def parse_game_state(raw_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize raw incoming telemetry data from game client."""
-    max_hp = float(raw_data.get("max_hp", 1)) or 1.0
-    current_hp = float(raw_data.get("hp", 0))
-    return {
-        "player_id": raw_data.get("pid", 0),
-        "health_pct": round((current_hp / max_hp) * 100, 1),
-        "is_in_combat": bool(raw_data.get("combat_flag", False)),
-        "position": (raw_data.get("x", 0), raw_data.get("y", 0), raw_data.get("z", 0)),
-    }
+def get_session_latency(latency_data: List[int]) -> Optional[float]:
+    """Computes average latency from a list of measurements."""
+    if not latency_data:
+        return None
+    return sum(latency_data) / len(latency_data)
