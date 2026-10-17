@@ -1,31 +1,47 @@
+import random
 import time
-import functools
-import logging
-from typing import Callable, Any
+from typing import Tuple, Dict, Any
 
-logger = logging.getLogger(__name__)
 
-def retry_network_operation(max_attempts: int = 3, delay: float = 2.0):
-    """Decorator to retry network calls on failure."""
-    def decorator(func: Callable):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            last_exception = None
-            for attempt in range(max_attempts):
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    last_exception = e
-                    logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {e}")
-                    if attempt < max_attempts - 1:
-                        time.sleep(delay * (2 ** attempt))
-            logger.error(f"Operation {func.__name__} failed after {max_attempts} attempts")
-            raise last_exception
-        return wrapper
-    return decorator
+def human_delay(min_seconds: float = 0.5, max_seconds: float = 1.5) -> None:
+    """Simulate human reaction time with a randomized delay."""
+    delay = random.uniform(min_seconds, max_seconds)
+    time.sleep(delay)
 
-@retry_network_operation(max_attempts=3, delay=1.0)
-def fetch_game_data(endpoint: str):
-    """Simulated network fetch operation for automation tool."""
-    # Example logic for interaction with game servers
-    pass
+
+def calculate_xp_required(current_level: int, base_xp: int = 100, growth_factor: float = 1.5) -> int:
+    """Calculate total XP required for the specified level."""
+    if current_level < 1:
+        return 0
+    return int(base_xp * (current_level ** growth_factor))
+
+
+def calculate_center_point(region: Tuple[int, int, int, int]) -> Tuple[int, int]:
+    """
+    Calculate the center coordinate (X, Y) from a region box (left, top, width, height).
+    """
+    left, top, width, height = region
+    center_x = left + (width // 2)
+    center_y = top + (height // 2)
+    return center_x, center_y
+
+
+def format_cooldown(seconds_remaining: float) -> str:
+    """Format remaining seconds into readable MM:SS format."""
+    if seconds_remaining <= 0:
+        return "Ready"
+    minutes = int(seconds_remaining) // 60
+    seconds = int(seconds_remaining) % 60
+    return f"{minutes:02d}:{seconds:02d}"
+
+
+def parse_game_state(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize raw incoming telemetry data from game client."""
+    max_hp = float(raw_data.get("max_hp", 1)) or 1.0
+    current_hp = float(raw_data.get("hp", 0))
+    return {
+        "player_id": raw_data.get("pid", 0),
+        "health_pct": round((current_hp / max_hp) * 100, 1),
+        "is_in_combat": bool(raw_data.get("combat_flag", False)),
+        "position": (raw_data.get("x", 0), raw_data.get("y", 0), raw_data.get("z", 0)),
+    }
