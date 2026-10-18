@@ -1,35 +1,48 @@
+import json
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
-# Gaming automation tool configurations
-DEFAULT_SETTINGS: Dict[str, Any] = {
-    "screen_resolution": (1920, 1080),
-    "scan_interval": 0.5,
+DEFAULT_CONFIG: Dict[str, Any] = {
+    "target_window": "GameTitle",
+    "fps_limit": 60,
+    "hotkeys": {
+        "start_macro": "f9",
+        "stop_macro": "f10",
+        "emergency_exit": "f12",
+    },
+    "auto_save_interval": 300,
     "debug_mode": False,
-    "log_level": "INFO",
-    "retry_attempts": 3
+    "ocr_confidence_threshold": 0.85,
 }
 
-def get_env_var(key: str, default: Any = None) -> Any:
-    """Retrieve environment variables with fallback defaults."""
-    return os.getenv(key, default)
 
-class AppConfig:
-    def __init__(self) -> None:
-        self.settings = DEFAULT_SETTINGS.copy()
-        self._load_environment_overrides()
+def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively merge override dictionary into base dictionary."""
+    result = base.copy()
+    for key, value in override.items():
+        if isinstance(value, dict) and key in result and isinstance(result[key], dict):
+            result[key] = merge_dicts(result[key], value)
+        else:
+            result[key] = value
+    return result
 
-    def _load_environment_overrides(self) -> None:
-        """Update settings from environment variables if present."""
-        env_val = get_env_var("DEBUG_MODE")
-        if env_val is not None:
-            self.settings["debug_mode"] = env_val.lower() == "true"
 
-        scan_rate = get_env_var("SCAN_INTERVAL")
-        if scan_rate:
-            self.settings["scan_interval"] = float(scan_rate)
+def load_config(config_path: str = "config.json") -> Dict[str, Any]:
+    """Loads JSON configuration file and merges it with default gaming settings."""
+    if not os.path.exists(config_path):
+        save_config(DEFAULT_CONFIG, config_path)
+        return DEFAULT_CONFIG.copy()
 
-    def get(self, key: str) -> Any:
-        return self.settings.get(key)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            user_config = json.load(f)
+        return merge_dicts(DEFAULT_CONFIG, user_config)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Warning: Failed to load {config_path} ({e}). Using defaults.")
+        return DEFAULT_CONFIG.copy()
 
-config = AppConfig()
+
+def save_config(config: Dict[str, Any], config_path: str = "config.json") -> None:
+    """Saves current configuration dictionary to a JSON file."""
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4)
