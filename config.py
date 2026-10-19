@@ -1,36 +1,31 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 DEFAULT_CONFIG = {
-    "window_title": "Game Client",
+    "resolution": "1920x1080",
     "fps_limit": 60,
-    "auto_clicker_enabled": False,
-    "click_interval_ms": 500
+    "auto_loot": True,
+    "log_level": "INFO"
 }
 
-def load_config(file_path: str = "config.json") -> Dict[str, Any]:
-    """Loads configuration from disk, falling back to defaults."""
+def load_config(path: str = "config.json") -> Dict[str, Any]:
+    """Loads configuration from disk or returns defaults."""
     config = DEFAULT_CONFIG.copy()
     
-    if not os.path.exists(file_path):
-        _save_default_config(file_path, config)
+    if not os.path.exists(path):
         return config
-        
+
     try:
-        with open(file_path, "r") as f:
-            user_config = json.load(f)
-            config.update(user_config)
+        with open(path, "r") as f:
+            user_data = json.load(f)
+            config.update(user_data)
     except (json.JSONDecodeError, IOError):
-        # Fallback to defaults on corrupted file
         pass
-        
+
     return config
 
-def _save_default_config(file_path: str, config: Dict[str, Any]) -> None:
-    """Initializes configuration file with default values."""
-    try:
-        with open(file_path, "w") as f:
-            json.dump(config, f, indent=4)
-    except IOError:
-        pass
+def save_config(config: Dict[str, Any], path: str = "config.json") -> None:
+    """Persists current configuration to json file."""
+    with open(path, "w") as f:
+        json.dump(config, f, indent=4)
