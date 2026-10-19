@@ -1,48 +1,46 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Dict, Any
 
-DEFAULT_CONFIG: Dict[str, Any] = {
-    "target_window": "GameTitle",
-    "fps_limit": 60,
-    "hotkeys": {
-        "start_macro": "f9",
-        "stop_macro": "f10",
-        "emergency_exit": "f12",
-    },
-    "auto_save_interval": 300,
-    "debug_mode": False,
-    "ocr_confidence_threshold": 0.85,
+DEFAULT_CONFIG = {
+    "game_path": "C:\\Games\\AutomationGame",
+    "auto_click_interval": 0.5,
+    "log_level": "INFO",
+    "enable_overlay": True
 }
 
+class ConfigLoader:
+    """Handles loading and merging of application configuration."""
 
-def merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
-    """Recursively merge override dictionary into base dictionary."""
-    result = base.copy()
-    for key, value in override.items():
-        if isinstance(value, dict) and key in result and isinstance(result[key], dict):
-            result[key] = merge_dicts(result[key], value)
-        else:
-            result[key] = value
-    return result
+    def __init__(self, config_path: str = "config.json"):
+        self.config_path = config_path
+        self.data = DEFAULT_CONFIG.copy()
 
+    def load(self) -> Dict[str, Any]:
+        """Loads config from file if it exists, otherwise returns defaults."""
+        if not os.path.exists(self.config_path):
+            self._save_defaults()
+            return self.data
 
-def load_config(config_path: str = "config.json") -> Dict[str, Any]:
-    """Loads JSON configuration file and merges it with default gaming settings."""
-    if not os.path.exists(config_path):
-        save_config(DEFAULT_CONFIG, config_path)
-        return DEFAULT_CONFIG.copy()
+        try:
+            with open(self.config_path, 'r') as f:
+                user_data = json.load(f)
+                self.data.update(user_data)
+        except (json.JSONDecodeError, IOError):
+            # Revert to safe defaults on corruption
+            pass
+            
+        return self.data
 
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            user_config = json.load(f)
-        return merge_dicts(DEFAULT_CONFIG, user_config)
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Warning: Failed to load {config_path} ({e}). Using defaults.")
-        return DEFAULT_CONFIG.copy()
+    def _save_defaults(self) -> None:
+        """Persists default configuration to the specified path."""
+        try:
+            with open(self.config_path, 'w') as f:
+                json.dump(DEFAULT_CONFIG, f, indent=4)
+        except IOError:
+            pass
 
-
-def save_config(config: Dict[str, Any], config_path: str = "config.json") -> None:
-    """Saves current configuration dictionary to a JSON file."""
-    with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=4)
+if __name__ == "__main__":
+    loader = ConfigLoader()
+    current_cfg = loader.load()
+    print(f"Active config: {current_cfg}")
