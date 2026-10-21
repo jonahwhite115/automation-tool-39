@@ -1,34 +1,30 @@
 import time
-import random
-import pyautogui
+import functools
+import logging
 
-def random_sleep(min_sec=0.5, max_sec=1.5):
-    """Wait for a random duration to simulate human-like behavior."""
-    time.sleep(random.uniform(min_sec, max_sec))
+logger = logging.getLogger(__name__)
 
-def click_element(x, y, confidence=0.8):
-    """Perform a mouse click at specific coordinates."""
-    pyautogui.click(x=x, y=y)
-    random_sleep()
-
-def get_screen_center():
-    """Calculate the center point of the primary display."""
-    width, height = pyautogui.size()
-    return width // 2, height // 2
-
-def press_key(key, duration=0.1):
-    """Press and hold a keyboard key for a brief duration."""
-    pyautogui.keyDown(key)
-    time.sleep(duration)
-    pyautogui.keyUp(key)
-
-def log_status(message):
-    """Simple timestamped log output for automation events."""
-    timestamp = time.strftime('%H:%M:%S')
-    print(f'[{timestamp}] {message}')
-
-def safe_screenshot(filename='debug.png'):
-    """Capture current screen state for verification."""
-    img = pyautogui.screenshot()
-    img.save(filename)
-    log_status(f'screenshot saved to {filename}')
+def retry_on_failure(retries=3, delay=2, exceptions=(ConnectionError, TimeoutError)):
+    """
+    Decorator to retry network-dependent functions upon failure.
+    
+    :param retries: Number of attempts to make.
+    :param delay: Seconds to wait between attempts.
+    :param exceptions: Tuple of exceptions that trigger a retry.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(retries):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    last_exception = e
+                    logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {e}")
+                    if attempt < retries - 1:
+                        time.sleep(delay)
+            logger.error(f"All {retries} attempts failed for {func.__name__}")
+            raise last_exception
+        return wrapper
+    return decorator
