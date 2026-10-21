@@ -1,47 +1,40 @@
 # automation-tool-39
 
-A high-performance Python automation framework designed to streamline repetitive tasks in desktop-based MMORPGs. It utilizes computer vision and low-latency input simulation to provide reliable gameplay assistance without interfering with game memory.
+A high-performance Python automation framework designed to streamline repetitive tasks in modern desktop gaming. This tool utilizes computer vision and low-latency input simulation to handle complex workflows without interfering with game processes.
 
 ## Features
 
-*   **Pixel-Perfect Detection:** Uses OpenCV-based template matching to identify interactive UI elements, inventory items, and spawn points in real-time.
-*   **Human-like Input Simulation:** Employs randomized mouse trajectory algorithms and variable click intervals to mimic authentic human interaction and avoid detection heuristics.
-*   **Asynchronous Task Queue:** Built with `asyncio` to manage multiple background processes, allowing for simultaneous resource gathering and combat rotation monitoring.
-*   **Configuration Presets:** Supports JSON-based profiles to easily switch between different game client resolutions or character class settings.
+*   **Pixel-Perfect Detection:** Leverages `OpenCV` for real-time template matching to identify UI elements and status indicators with sub-millisecond precision.
+*   **Humanized Input Simulation:** Uses randomized delay intervals and non-linear mouse paths to mimic authentic human interaction and bypass basic anti-cheat heuristics.
+*   **Multi-Monitor Support:** Dynamically captures specific window handles, allowing you to run automation on a background window while using your primary monitor.
+*   **Configurable Profiles:** Easily swap between different game settings or automated tasks using JSON-based configuration files.
 
 ## Installation
 
-Ensure you have [Python 3.10+](https://python.org) installed on your system.
+Ensure you have [Python 3.9+](https://python.org) installed on your system. Clone the repository and install the required dependencies:
 
 ```bash
-# Clone the repository
 git clone https://github.com/Developer/automation-tool-39.git
 cd automation-tool-39
-
-# Create a virtual environment and install dependencies
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-Define your target window title and task parameters in `config.json`, then launch the automation engine:
+To start an automation sequence, use the CLI to point the tool toward your target configuration file.
 
-```python
-from automation import BotEngine
+```bash
+# Basic execution
+python main.py --config configs/daily_grind.json --log-level INFO
 
-# Initialize with profile
-bot = BotEngine(config_path="configs/gold_farm_v1.json")
-
-# Start the event loop
-bot.start()
+# Run in headless mode
+python main.py --config configs/farming.json --headless
 ```
 
-For advanced users, you can pass custom hooks to the `on_event` callback to trigger alerts via Telegram or Discord when specific in-game events occur.
-
 ## Disclaimer
-This tool is intended for educational purposes only. Use of automation software may violate the Terms of Service of your target game. Use at your own risk.
+This tool is intended for educational and local use only. Please respect the Terms of Service of any game you interact with. The developer assumes no responsibility for account bans or service violations.
 
 ## License
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
