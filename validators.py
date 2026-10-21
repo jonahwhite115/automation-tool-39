@@ -1,31 +1,34 @@
-import re
+import logging
 
-class InputValidator:
-    """Utility class for validating user-provided game configuration inputs."""
+# Configuration for gaming automation input bounds
+MIN_INTERVAL = 0.5
+MAX_INTERVAL = 60.0
+ALLOWED_KEYS = {'w', 'a', 's', 'd', 'space', 'shift', 'ctrl'}
 
-    @staticmethod
-    def validate_delay(value: str) -> bool:
-        """Ensure input is a positive integer string representing seconds."""
-        return value.isdigit() and int(value) > 0
+logger = logging.getLogger(__name__)
 
-    @staticmethod
-    def validate_profile_name(name: str) -> bool:
-        """Validate profile name adheres to alphanumeric constraints."""
-        return bool(re.match(r"^[a-zA-Z0-9_-]{3,16}$", name))
+def validate_input_sequence(sequence: list) -> bool:
+    """Validates game input sequence parameters before execution."""
+    if not isinstance(sequence, list):
+        logger.error("Input sequence must be a list")
+        return False
 
-    @staticmethod
-    def validate_hotkey(key: str) -> bool:
-        """Verify hotkey is a single alphanumeric character."""
-        return len(key) == 1 and key.isalnum()
+    for entry in sequence:
+        action = entry.get('action')
+        duration = entry.get('duration', 0)
 
-def get_validated_input(prompt: str, validator_func) -> str:
-    """Interactive loop to capture and validate user input."""
-    while True:
-        user_input = input(f"{prompt}: ").strip()
-        if validator_func(user_input):
-            return user_input
-        print("Invalid input. Please try again.")
+        if action not in ALLOWED_KEYS:
+            logger.warning(f"Invalid action detected: {action}")
+            return False
 
-# Example usage inside the main processing loop:
-# delay = get_validated_input("Enter delay", InputValidator.validate_delay)
-# profile = get_validated_input("Enter profile name", InputValidator.validate_profile_name)
+        if not isinstance(duration, (int, float)) or not (MIN_INTERVAL <= duration <= MAX_INTERVAL):
+            logger.warning(f"Duration {duration} out of bounds [{MIN_INTERVAL}, {MAX_INTERVAL}]")
+            return False
+
+    return True
+
+def sanitize_coords(x: int, y: int, screen_width: int, screen_height: int) -> tuple:
+    """Ensures screen coordinates remain within bounds."""
+    safe_x = max(0, min(x, screen_width))
+    safe_y = max(0, min(y, screen_height))
+    return (safe_x, safe_y)
