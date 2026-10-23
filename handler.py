@@ -2,34 +2,29 @@ import time
 import functools
 import logging
 
-# Logger setup for automation-tool-39
 logger = logging.getLogger(__name__)
 
-def retry_network_op(retries=3, delay=2, backoff=2):
-    """Decorator for retrying unstable network requests."""
+def with_retry(max_attempts=3, delay=2):
+    """Decorator to retry network operations on failure."""
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            attempt = 0
-            current_delay = delay
-            while attempt < retries:
+            last_exception = None
+            for attempt in range(1, max_attempts + 1):
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
-                    attempt += 1
-                    if attempt == retries:
-                        logger.error(f"Final attempt failed for {func.__name__}: {e}")
-                        raise
-                    
-                    logger.warning(f"Attempt {attempt} failed, retrying in {current_delay}s...")
-                    time.sleep(current_delay)
-                    current_delay *= backoff
+                except (ConnectionError, TimeoutError) as e:
+                    last_exception = e
+                    logger.warning(f"Attempt {attempt} failed: {e}. Retrying...")
+                    if attempt < max_attempts:
+                        time.sleep(delay)
+            logger.error(f"Operation failed after {max_attempts} attempts")
+            raise last_exception
         return wrapper
     return decorator
 
-@retry_network_op(retries=3, delay=1)
-def execute_game_api_call(endpoint, payload):
-    """Example network call for gaming automation tasks."""
-    # Simulating connection logic
-    logger.info(f"Connecting to {endpoint}...")
-    return True
+@with_retry(max_attempts=3, delay=1)
+def fetch_game_data(endpoint):
+    """Simulate network call for gaming assets."""
+    # Implementation logic for API requests would go here
+    return {"status": "success", "data": "game_config_payload"}
