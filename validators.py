@@ -1,34 +1,27 @@
-import logging
+import re
+from typing import Any, Optional
 
-# Configuration for gaming automation input bounds
-MIN_INTERVAL = 0.5
-MAX_INTERVAL = 60.0
-ALLOWED_KEYS = {'w', 'a', 's', 'd', 'space', 'shift', 'ctrl'}
+def validate_game_id(game_id: str) -> bool:
+    """Checks if game_id follows standard hex format."""
+    pattern = re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+    return bool(pattern.match(game_id))
 
-logger = logging.getLogger(__name__)
+def validate_player_count(count: Any) -> int:
+    """Ensures player count is within game capacity bounds."""
+    try:
+        value = int(count)
+        if 1 <= value <= 128:
+            return value
+        raise ValueError('Count out of bounds')
+    except (ValueError, TypeError):
+        return 0
 
-def validate_input_sequence(sequence: list) -> bool:
-    """Validates game input sequence parameters before execution."""
-    if not isinstance(sequence, list):
-        logger.error("Input sequence must be a list")
+def validate_session_token(token: Optional[str]) -> bool:
+    """Validates session token length and character safety."""
+    if not token or len(token) < 32:
         return False
+    return token.isalnum()
 
-    for entry in sequence:
-        action = entry.get('action')
-        duration = entry.get('duration', 0)
-
-        if action not in ALLOWED_KEYS:
-            logger.warning(f"Invalid action detected: {action}")
-            return False
-
-        if not isinstance(duration, (int, float)) or not (MIN_INTERVAL <= duration <= MAX_INTERVAL):
-            logger.warning(f"Duration {duration} out of bounds [{MIN_INTERVAL}, {MAX_INTERVAL}]")
-            return False
-
-    return True
-
-def sanitize_coords(x: int, y: int, screen_width: int, screen_height: int) -> tuple:
-    """Ensures screen coordinates remain within bounds."""
-    safe_x = max(0, min(x, screen_width))
-    safe_y = max(0, min(y, screen_height))
-    return (safe_x, safe_y)
+def sanitize_player_name(name: str) -> str:
+    """Removes illegal characters from player aliases."""
+    return re.sub(r'[^a-zA-Z0-9_-]', '', name)[:16]
