@@ -1,37 +1,32 @@
 import logging
-from logging.handlers import RotatingFileHandler
-import os
+import sys
+from datetime import datetime
 
-def setup_logger(name: str = "automation_tool"):
-    """Initializes a rotating file logger for gaming automation tasks."""
+def get_logger(name: str) -> logging.Logger:
+    """Configures a standardized logger for automation-tool-39."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-
-    # Ensure logs directory exists
-    log_dir = "logs"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    # Setup file rotation: 5MB per file, keep 3 backups
-    log_file = os.path.join(log_dir, f"{name}.log")
-    handler = RotatingFileHandler(
-        log_file, 
-        maxBytes=5*1024*1024, 
-        backupCount=3
-    )
-    
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    
-    # Prevent duplicate handlers if re-initialized
     if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        handler.setFormatter(formatter)
         logger.addHandler(handler)
-        
-    # Optional console output for development
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
+        logger.setLevel(logging.INFO)
     return logger
+
+def log_execution_start(task_name: str):
+    """Utility to mark the beginning of a game automation task."""
+    logger = get_logger('automation')
+    logger.info(f'Starting execution of task: {task_name}')
+
+def log_error(task_name: str, error: Exception):
+    """Utility to report exceptions with context."""
+    logger = get_logger('automation')
+    logger.error(f'Task {task_name} failed: {str(error)}')
+
+def log_performance(duration: float):
+    """Logs execution duration for performance monitoring."""
+    logger = get_logger('automation')
+    logger.info(f'Task completed in {duration:.2f} seconds')
