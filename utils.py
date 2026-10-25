@@ -1,32 +1,31 @@
-import time
-from typing import List, Optional
+import json
+import os
+from typing import Any, Dict, Optional
 
-def get_timestamp() -> float:
-    """Returns the current high-precision system time."""
-    return time.perf_counter()
+def load_game_data(file_path: str) -> Dict[str, Any]:
+    """Load and parse game configuration or save data."""
+    if not os.path.exists(file_path):
+        return {}
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {}
 
-def format_player_stats(player_name: str, scores: List[int]) -> str:
-    """Formats a list of game scores into a display string."""
-    avg_score = sum(scores) / len(scores) if scores else 0
-    return f"Player {player_name}: Avg {avg_score:.2f} across {len(scores)} games"
-
-def validate_game_session(session_id: Optional[str]) -> bool:
-    """Checks if the provided game session identifier is valid.
-
-    Args:
-        session_id: The unique identifier string for the session.
-
-    Returns:
-        bool: True if the session ID is valid, False otherwise.
-    """
-    if not session_id or len(session_id) < 8:
+def save_game_data(file_path: str, data: Dict[str, Any]) -> bool:
+    """Persist game state to a json file."""
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+        return True
+    except IOError:
         return False
-    return session_id.isalnum()
 
-def calculate_latency(start_time: float) -> float:
-    """Calculates latency in milliseconds based on start time."""
-    return (get_timestamp() - start_time) * 1000
+def validate_player_stats(stats: Dict[str, Any], required_keys: list) -> bool:
+    """Verification of player stat integrity."""
+    return all(key in stats for key in required_keys)
 
-def get_active_nodes(nodes: List[str], filter_key: str = "active") -> List[str]:
-    """Filters list of game nodes based on a prefix key."""
-    return [node for node in nodes if filter_key in node]
+def sanitize_input(user_input: str) -> str:
+    """Basic sanitization for gaming console commands."""
+    return str(user_input).strip().lower()
