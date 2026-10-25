@@ -1,32 +1,43 @@
 import logging
 import sys
-from datetime import datetime
+from typing import Optional
 
-def get_logger(name: str) -> logging.Logger:
-    """Configures a standardized logger for automation-tool-39."""
+def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
+    """
+    Configures a logger instance for automation-tool-39 components.
+
+    Args:
+        name: The name of the logger instance.
+        level: The logging severity level.
+
+    Returns:
+        A configured logging.Logger object.
+    """
     logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # Prevent duplicate handlers if re-initialized
     if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter(
-            '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
     return logger
 
-def log_execution_start(task_name: str):
-    """Utility to mark the beginning of a game automation task."""
-    logger = get_logger('automation')
-    logger.info(f'Starting execution of task: {task_name}')
+def log_game_event(logger: logging.Logger, event: str, metadata: Optional[dict] = None) -> None:
+    """
+    Records specific gaming automation events with optional metadata.
 
-def log_error(task_name: str, error: Exception):
-    """Utility to report exceptions with context."""
-    logger = get_logger('automation')
-    logger.error(f'Task {task_name} failed: {str(error)}')
-
-def log_performance(duration: float):
-    """Logs execution duration for performance monitoring."""
-    logger = get_logger('automation')
-    logger.info(f'Task completed in {duration:.2f} seconds')
+    Args:
+        logger: The logger instance to use.
+        event: A description of the event.
+        metadata: Optional dictionary containing event details.
+    """
+    msg = f"EVENT: {event}"
+    if metadata:
+        msg += f" | DATA: {metadata}"
+    logger.info(msg)
