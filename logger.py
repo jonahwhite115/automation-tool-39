@@ -1,34 +1,36 @@
 import logging
-import os
 from logging.handlers import RotatingFileHandler
+import os
 
 def setup_logger(name='automation-tool-39', log_file='game_automation.log'):
-    """Initializes a rotating file logger for session monitoring."""
+    """
+    Configures a rotating file logger for the gaming automation tool.
+    Keeps logs at 5MB per file with a backup count of 3.
+    """
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
-    # Prevent duplicate handlers if re-initialized
+    # Prevent duplicate handlers if setup is called multiple times
     if not logger.handlers:
-        # 5MB per file, keep 3 backup files
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+
+        # Rotation setup: 5MB max size per file, keeping 3 backups
         handler = RotatingFileHandler(
             log_file, 
             maxBytes=5 * 1024 * 1024, 
             backupCount=3
         )
-        
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
         handler.setFormatter(formatter)
-        
         logger.addHandler(handler)
-        
+
         # Also output to console for real-time monitoring
-        console = logging.StreamHandler()
-        console.setFormatter(formatter)
-        logger.addHandler(console)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
     return logger
 
-# Global logger instance for game automation
-automation_logger = setup_logger()
+# Initialize global logger instance
+logger = setup_logger()
