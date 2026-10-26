@@ -1,38 +1,27 @@
 import re
 
-# Input validation for gaming automation parameters
-def validate_game_config(config_data: dict) -> bool:
-    """
-    Ensures user provided configurations meet criteria
-    for automated game actions.
-    """
-    required_keys = ['macro_name', 'interval', 'key_bind']
-    
-    # Check for missing keys
-    if not all(key in config_data for key in required_keys):
-        return False
+def validate_game_id(game_id: str) -> bool:
+    """Checks if game ID follows the expected alphanumeric format."""
+    pattern = r'^[a-z0-9_-]{3,32}$'
+    return bool(re.match(pattern, game_id))
 
-    # Validate interval is a positive float
+def validate_settings(settings: dict) -> bool:
+    """Verifies existence of mandatory automation configuration keys."""
+    required = ['resolution', 'fps_limit', 'save_path']
+    return all(key in settings for key in required)
+
+def validate_memory_address(address: str) -> bool:
+    """Validates hexadecimal format for memory manipulation."""
     try:
-        interval = float(config_data['interval'])
-        if interval <= 0:
-            return False
-    except (ValueError, TypeError):
+        int(address, 16)
+        return len(address) >= 4
+    except ValueError:
         return False
 
-    # Validate key_bind matches standard input format (single alphanumeric)
-    if not re.match(r'^[a-zA-Z0-9]$', str(config_data['key_bind'])):
-        return False
+def sanitize_input(value: str) -> str:
+    """Removes potentially malicious control characters."""
+    return re.sub(r'[\x00-\x1f\x7f]', '', value)
 
-    return True
-
-def validate_user_input(value: str, min_len: int = 1) -> bool:
-    """
-    Basic string validation to prevent injection or empty strings
-    """
-    if not value or not isinstance(value, str):
-        return False
-    
-    # Remove dangerous shell characters
-    clean_value = re.sub(r'[^a-zA-Z0-9_\-\s]', '', value)
-    return len(clean_value) >= min_len
+def check_bounds(value: int, min_val: int, max_val: int) -> bool:
+    """Ensures numerical settings stay within physical bounds."""
+    return min_val <= value <= max_val
