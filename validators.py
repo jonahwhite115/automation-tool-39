@@ -1,27 +1,38 @@
 import re
-from typing import Any, Optional
 
-def validate_game_id(game_id: str) -> bool:
-    """Checks if game_id follows standard hex format."""
-    pattern = re.compile(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
-    return bool(pattern.match(game_id))
-
-def validate_player_count(count: Any) -> int:
-    """Ensures player count is within game capacity bounds."""
-    try:
-        value = int(count)
-        if 1 <= value <= 128:
-            return value
-        raise ValueError('Count out of bounds')
-    except (ValueError, TypeError):
-        return 0
-
-def validate_session_token(token: Optional[str]) -> bool:
-    """Validates session token length and character safety."""
-    if not token or len(token) < 32:
+# Input validation for gaming automation parameters
+def validate_game_config(config_data: dict) -> bool:
+    """
+    Ensures user provided configurations meet criteria
+    for automated game actions.
+    """
+    required_keys = ['macro_name', 'interval', 'key_bind']
+    
+    # Check for missing keys
+    if not all(key in config_data for key in required_keys):
         return False
-    return token.isalnum()
 
-def sanitize_player_name(name: str) -> str:
-    """Removes illegal characters from player aliases."""
-    return re.sub(r'[^a-zA-Z0-9_-]', '', name)[:16]
+    # Validate interval is a positive float
+    try:
+        interval = float(config_data['interval'])
+        if interval <= 0:
+            return False
+    except (ValueError, TypeError):
+        return False
+
+    # Validate key_bind matches standard input format (single alphanumeric)
+    if not re.match(r'^[a-zA-Z0-9]$', str(config_data['key_bind'])):
+        return False
+
+    return True
+
+def validate_user_input(value: str, min_len: int = 1) -> bool:
+    """
+    Basic string validation to prevent injection or empty strings
+    """
+    if not value or not isinstance(value, str):
+        return False
+    
+    # Remove dangerous shell characters
+    clean_value = re.sub(r'[^a-zA-Z0-9_\-\s]', '', value)
+    return len(clean_value) >= min_len
