@@ -1,34 +1,58 @@
 import time
-import logging
+from typing import Dict, Any, List
 
-# Gaming automation loop core
 
-def validate_user_input(command: str) -> bool:
-    """Ensures command strings meet game protocol."""
-    valid_commands = {'move', 'attack', 'loot', 'rest'}
-    return command.strip().lower() in valid_commands
+class GameActionProcessor:
+    """Processes and validates incoming game macro actions in the main loop."""
 
-def process_automation():
-    """Main execution loop for task automation."""
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger('automation-tool-39')
-    
-    logger.info("Starting automation sequence...")
-    
-    # Mock input stream
-    commands = ['move', 'invalid_cmd', 'attack', 'loot']
-    
-    for cmd in commands:
-        if not validate_user_input(cmd):
-            logger.warning(f"Discarding malformed input: {cmd}")
-            continue
-            
-        try:
-            logger.info(f"Executing action: {cmd}")
-            time.sleep(0.5)
-        except Exception as e:
-            logger.error(f"Unexpected loop interruption: {e}")
-            break
+    ALLOWED_ACTIONS = {"attack", "cast_spell", "use_item", "move_to"}
 
-if __name__ == '__main__':
-    process_automation()
+    def __init__(self, actions_queue: List[Dict[str, Any]]):
+        self.actions_queue = actions_queue
+        self.processed_count = 0
+        self.failed_count = 0
+
+    def validate_action_payload(self, raw_action: Dict[str, Any]) -> bool:
+        """Validates structure, command types, and parameters of an incoming action."""
+        if not isinstance(raw_action, dict):
+            return False
+
+        action_type = raw_action.get("action")
+        if not action_type or action_type not in self.ALLOWED_ACTIONS:
+            return False
+
+        delay = raw_action.get("delay", 0.0)
+        if not isinstance(delay, (int, float)) or delay < 0.0 or delay > 10.0:
+            return False
+
+        if action_type in ("attack", "cast_spell"):
+            target_id = raw_action.get("target_id")
+            if not isinstance(target_id, int) or target_id <= 0:
+                return False
+
+        if action_type == "move_to":
+            coords = raw_action.get("coordinates")
+            if not isinstance(coords, (tuple, list)) or len(coords) != 2:
+                return False
+            if not all(isinstance(c, (int, float)) for c in coords):
+                return False
+
+        return True
+
+    def run_loop(self) -> Dict[str, int]:
+        """Main processing loop validating and executing incoming game actions."""
+        for raw_action in self.actions_queue:
+            if not self.validate_action_payload(raw_action):
+                self.failed_count += 1
+                continue
+
+            self.execute_action(raw_action)
+            self.processed_count += 1
+
+        return {"processed": self.processed_count, "failed": self.failed_count}
+
+    def execute_action(self, action: Dict[str, Any]) -> None:
+        """Executes a verified game action payload."""
+        delay = action.get("delay", 0.0)
+        if delay > 0:
+            time.sleep(min(delay, 0.01))
