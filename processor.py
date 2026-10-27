@@ -1,31 +1,33 @@
-import time
-import random
-from typing import Any, List, Optional
+import logging
+from typing import List, Dict, Any
 
-def format_game_data(raw_input: dict) -> dict:
-    """Standardizes incoming telemetry from game client."""
-    return {
-        "player_id": raw_input.get("uid", 0),
-        "timestamp": time.time(),
-        "payload": raw_input.get("data", {}),
-        "version": "1.0.4"
-    }
+# Configure logging for game automation tasks
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('automation-tool-39')
 
-def retry_operation(func: callable, retries: int = 3, delay: float = 1.0) -> Any:
-    """Generic execution wrapper for unstable game endpoints."""
-    last_exception = None
-    for attempt in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            last_exception = e
-            time.sleep(delay * (2 ** attempt))
-    raise last_exception
+class GameStateProcessor:
+    """Handles processing of raw game state data for automation logic."""
 
-def filter_invalid_coords(coords: List[tuple]) -> List[tuple]:
-    """Sanitizes coordinate tuples for pathfinding operations."""
-    return [c for c in coords if isinstance(c, tuple) and len(c) == 2]
+    def __init__(self, sensitivity: float = 1.0):
+        self.sensitivity = sensitivity
 
-def generate_jitter(base_delay: float) -> float:
-    """Adds random noise to timing for anti-detection."""
-    return base_delay * (0.8 + random.random() * 0.4)
+    def clean_payload(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Filters out stale or malformed state entries."""
+        return [item for item in data if item.get('valid') and item.get('id')]
+
+    def transform_coords(self, data: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+        """Normalizes coordinates for bot click precision."""
+        results = []
+        for entry in data:
+            results.append({
+                'x': entry['x'] * self.sensitivity,
+                'y': entry['y'] * self.sensitivity,
+                'action': entry.get('action', 'idle')
+            })
+        return results
+
+    def process_frame(self, raw_data: List[Dict[str, Any]]) -> List[Dict[str, float]]:
+        """Orchestrates the cleanup and transformation pipeline."""
+        logger.info(f'Processing {len(raw_data)} entities')
+        valid_data = self.clean_payload(raw_data)
+        return self.transform_coords(valid_data)
