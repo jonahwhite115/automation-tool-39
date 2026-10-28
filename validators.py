@@ -1,27 +1,36 @@
-import re
+import time
+import functools
+import logging
 
-def validate_game_id(game_id: str) -> bool:
-    """Checks if game ID follows the expected alphanumeric format."""
-    pattern = r'^[a-z0-9_-]{3,32}$'
-    return bool(re.match(pattern, game_id))
+logger = logging.getLogger('automation-tool-39')
 
-def validate_settings(settings: dict) -> bool:
-    """Verifies existence of mandatory automation configuration keys."""
-    required = ['resolution', 'fps_limit', 'save_path']
-    return all(key in settings for key in required)
+def retry_on_failure(max_attempts=3, delay=2.0, backoff=2):
+    """Decorator to retry network-dependent operations with exponential backoff."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            attempts = 0
+            current_delay = delay
+            while attempts < max_attempts:
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError) as e:
+                    attempts += 1
+                    if attempts >= max_attempts:
+                        logger.error(f"Final attempt {attempts} failed: {e}")
+                        raise
+                    
+                    logger.warning(f"Attempt {attempts} failed, retrying in {current_delay}s...")
+                    time.sleep(current_delay)
+                    current_delay *= backoff
+            return None
+        return wrapper
+    return decorator
 
-def validate_memory_address(address: str) -> bool:
-    """Validates hexadecimal format for memory manipulation."""
-    try:
-        int(address, 16)
-        return len(address) >= 4
-    except ValueError:
-        return False
-
-def sanitize_input(value: str) -> str:
-    """Removes potentially malicious control characters."""
-    return re.sub(r'[\x00-\x1f\x7f]', '', value)
-
-def check_bounds(value: int, min_val: int, max_val: int) -> bool:
-    """Ensures numerical settings stay within physical bounds."""
-    return min_val <= value <= max_val
+def validate_network_response(data):
+    """Basic validation check for incoming API payloads."""
+    if not data:
+        raise ValueError("Empty response received from server")
+    if not isinstance(data, dict):
+        raise TypeError("Invalid data format: expected dictionary")
+    return True
