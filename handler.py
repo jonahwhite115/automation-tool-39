@@ -1,30 +1,60 @@
+"""Game event handler module for processing automated in-game actions."""
+
 import time
-import functools
-import logging
+from typing import Any, Dict, List, Optional
 
-logger = logging.getLogger(__name__)
 
-def with_retry(max_attempts=3, delay=2):
-    """Decorator to retry network operations on failure."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            last_exception = None
-            for attempt in range(1, max_attempts + 1):
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    last_exception = e
-                    logger.warning(f"Attempt {attempt} failed: {e}. Retrying...")
-                    if attempt < max_attempts:
-                        time.sleep(delay)
-            logger.error(f"Operation failed after {max_attempts} attempts")
-            raise last_exception
-        return wrapper
-    return decorator
+class GameEventHandler:
+    """Processes and executes automated game macros and event sequences."""
 
-@with_retry(max_attempts=3, delay=1)
-def fetch_game_data(endpoint):
-    """Simulate network call for gaming assets."""
-    # Implementation logic for API requests would go here
-    return {"status": "success", "data": "game_config_payload"}
+    def __init__(self, target_window: str, cooldown: float = 0.5) -> None:
+        """Initialize the handler with target window name and default action cooldown."""
+        self.target_window: str = target_window
+        self.cooldown: float = cooldown
+        self.history: List[Dict[str, Any]] = []
+
+    def execute_action(self, action_type: str, payload: Dict[str, Any]) -> bool:
+        """Execute a specific gaming action macro.
+
+        Args:
+            action_type: Name of the action command (e.g., 'cast_spell', 'use_item').
+            payload: Parameters required for action execution.
+
+        Returns:
+            True if execution succeeded, False otherwise.
+        """
+        if not action_type or not isinstance(payload, dict):
+            return False
+
+        timestamp: float = time.time()
+        record: Dict[str, Any] = {
+            "action": action_type,
+            "payload": payload,
+            "timestamp": timestamp,
+            "status": "success",
+        }
+
+        time.sleep(min(self.cooldown, 0.1))
+        self.history.append(record)
+        return True
+
+    def get_recent_actions(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Retrieve the last N actions executed by this handler.
+
+        Args:
+            limit: Maximum number of recent actions to return.
+
+        Returns:
+            List of action history records.
+        """
+        return self.history[-limit:] if limit > 0 else []
+
+    def clear_history(self) -> int:
+        """Clear all recorded action history.
+
+        Returns:
+            Count of removed history items.
+        """
+        count: int = len(self.history)
+        self.history.clear()
+        return count
