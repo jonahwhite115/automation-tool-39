@@ -1,31 +1,28 @@
-import json
-import os
-from typing import Any, Dict, Optional
+import time
+from typing import List, Optional
 
-def load_game_data(file_path: str) -> Dict[str, Any]:
-    """Load and parse game configuration or save data."""
-    if not os.path.exists(file_path):
-        return {}
-    
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
+def get_timestamp() -> float:
+    """Returns the current high-precision system time."""
+    return time.time()
 
-def save_game_data(file_path: str, data: Dict[str, Any]) -> bool:
-    """Persist game state to a json file."""
-    try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
-        return True
-    except IOError:
-        return False
+def format_player_name(name: str, prefix: Optional[str] = None) -> str:
+    """Sanitizes and prefixes a player name for game logs."""
+    clean_name = name.strip().lower().replace(" ", "_")
+    if prefix:
+        return f"{prefix}_{clean_name}"
+    return clean_name
 
-def validate_player_stats(stats: Dict[str, Any], required_keys: list) -> bool:
-    """Verification of player stat integrity."""
-    return all(key in stats for key in required_keys)
+def validate_fps_limit(limit: int) -> bool:
+    """Validates that the provided FPS limit is within safe hardware ranges."""
+    return 30 <= limit <= 360
 
-def sanitize_input(user_input: str) -> str:
-    """Basic sanitization for gaming console commands."""
-    return str(user_input).strip().lower()
+def batch_process_ids(ids: List[int], batch_size: int = 10) -> List[List[int]]:
+    """Splits a large list of game object IDs into smaller chunks for processing."""
+    return [ids[i : i + batch_size] for i in range(0, len(ids), batch_size)]
+
+def calculate_cooldown_progress(elapsed: float, total: float) -> float:
+    """Calculates the percentage of completion for a game skill cooldown."""
+    if total <= 0:
+        return 1.0
+    progress = elapsed / total
+    return min(max(progress, 0.0), 1.0)
