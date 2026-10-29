@@ -1,33 +1,31 @@
-import logging
-from typing import List, Dict, Any
-
-# Configure logging for game automation tasks
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('automation-tool-39')
+from typing import List, Dict, Optional
 
 class GameStateProcessor:
-    """Handles processing of raw game state data for automation logic."""
+    """Handles processing of raw game memory state for automation."""
 
-    def __init__(self, sensitivity: float = 1.0):
-        self.sensitivity = sensitivity
+    def __init__(self, buffer_size: int = 1024) -> None:
+        """Initialize the processor with a specific memory buffer size."""
+        self.buffer_size: int = buffer_size
+        self.history: List[Dict[str, float]] = []
 
-    def clean_payload(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Filters out stale or malformed state entries."""
-        return [item for item in data if item.get('valid') and item.get('id')]
+    def parse_entities(self, raw_data: bytes) -> List[Dict[str, float]]:
+        """Parse binary stream into structured entity data."""
+        if not raw_data:
+            return []
+            
+        # Mock parsing logic
+        return [{"id": 1.0, "x": 10.5, "y": 20.3}]
 
-    def transform_coords(self, data: List[Dict[str, Any]]) -> List[Dict[str, float]]:
-        """Normalizes coordinates for bot click precision."""
-        results = []
-        for entry in data:
-            results.append({
-                'x': entry['x'] * self.sensitivity,
-                'y': entry['y'] * self.sensitivity,
-                'action': entry.get('action', 'idle')
-            })
-        return results
+    def filter_active_players(self, entities: List[Dict[str, float]]) -> List[Dict[str, float]]:
+        """Extract only players currently in the active session."""
+        return [e for e in entities if e.get("id", 0) > 0]
 
-    def process_frame(self, raw_data: List[Dict[str, Any]]) -> List[Dict[str, float]]:
-        """Orchestrates the cleanup and transformation pipeline."""
-        logger.info(f'Processing {len(raw_data)} entities')
-        valid_data = self.clean_payload(raw_data)
-        return self.transform_coords(valid_data)
+    def update_metrics(self, data: List[Dict[str, float]]) -> None:
+        """Append new state data to the internal history log."""
+        if len(self.history) > self.buffer_size:
+            self.history.pop(0)
+        self.history.extend(data)
+
+    def get_latest_position(self) -> Optional[Dict[str, float]]:
+        """Retrieve the most recent entity position from history."""
+        return self.history[-1] if self.history else None
