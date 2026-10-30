@@ -3,48 +3,40 @@ import time
 from typing import Tuple
 
 
-def human_delay(min_seconds: float = 0.1, max_seconds: float = 0.5) -> None:
-    """Simulate human reaction time with a randomized sleep duration."""
-    delay = random.uniform(min_seconds, max_seconds)
+def calculate_health_percentage(current_hp: int, max_hp: int) -> float:
+    """Calculate current health as a percentage between 0.0 and 100.0."""
+    if max_hp <= 0:
+        return 0.0
+    bounded_hp = max(0, min(current_hp, max_hp))
+    return round((bounded_hp / max_hp) * 100.0, 2)
+
+
+def get_randomized_delay(base_seconds: float, variance: float = 0.15) -> float:
+    """Generate a randomized delay to simulate human-like interaction timing."""
+    min_delay = max(0.01, base_seconds * (1.0 - variance))
+    max_delay = base_seconds * (1.0 + variance)
+    return round(random.uniform(min_delay, max_delay), 3)
+
+
+def sleep_humanized(base_seconds: float, variance: float = 0.15) -> None:
+    """Pause execution for a randomized duration to evade basic bot detection."""
+    delay = get_randomized_delay(base_seconds, variance)
     time.sleep(delay)
 
 
-def calculate_health_percentage(current_hp: int, max_hp: int) -> float:
-    """Calculate current health percentage safely."""
-    if max_hp <= 0:
-        return 0.0
-    return round(max(0.0, min(100.0, (current_hp / max_hp) * 100)), 2)
-
-
-def grid_to_screen_coords(
-    row: int,
-    col: int,
-    start_x: int,
-    start_y: int,
-    slot_size: int,
-    padding: int = 2,
-) -> Tuple[int, int]:
-    """Convert inventory grid row/col to screen center coordinates."""
-    center_x = start_x + col * (slot_size + padding) + (slot_size // 2)
-    center_y = start_y + row * (slot_size + padding) + (slot_size // 2)
-    return center_x, center_y
-
-
-def is_within_bounds(
-    point: Tuple[int, int], region: Tuple[int, int, int, int]
+def is_target_in_range(
+    player_pos: Tuple[int, int], target_pos: Tuple[int, int], max_distance: float
 ) -> bool:
-    """Check if (x, y) point lies within region (x, y, width, height)."""
-    x, y = point
-    rx, ry, rwidth, rheight = region
-    return rx <= x <= rx + rwidth and ry <= y <= ry + rheight
+    """Check if a target position is within combat/interaction range."""
+    dx = player_pos[0] - target_pos[0]
+    dy = player_pos[1] - target_pos[1]
+    distance_squared = dx * dx + dy * dy
+    return distance_squared <= (max_distance * max_distance)
 
 
 def format_cooldown(seconds_remaining: float) -> str:
-    """Format cooldown time into human readable format."""
-    if seconds_remaining <= 0:
-        return "Ready"
-    if seconds_remaining < 60:
-        return f"{seconds_remaining:.1f}s"
-    minutes = int(seconds_remaining // 60)
-    secs = int(seconds_remaining % 60)
-    return f"{minutes:02d}:{secs:02d}"
+    """Format remaining cooldown time into readable format (e.g. '01:23')."""
+    total_seconds = max(0, int(seconds_remaining))
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    return f"{minutes:02d}:{seconds:02d}"
