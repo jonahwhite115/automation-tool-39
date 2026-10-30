@@ -1,49 +1,36 @@
-"""Custom exception classes for gaming automation handling edge cases."""
-
-
-class GamingAutomationError(Exception):
-    """Base exception for all gaming automation tool errors."""
-
+class AutomationError(Exception):
+    """Base exception for all automation-tool-39 errors."""
     pass
 
+class GameProcessError(AutomationError):
+    """Raised when the game process is inaccessible."""
+    pass
 
-class ProcessNotFoundError(GamingAutomationError):
-    """Raised when the target game process cannot be located or hooked."""
+class ConfigValidationError(AutomationError):
+    """Raised when configuration files are invalid."""
+    pass
 
-    def __init__(self, process_name: str):
-        self.process_name = process_name
-        super().__init__(f"Game process '{process_name}' not found or inaccessible.")
+class NetworkTimeoutError(AutomationError):
+    """Raised when remote server requests time out."""
+    pass
 
+class ResourceAccessError(AutomationError):
+    """Raised when file or memory handles fail."""
+    pass
 
-class VisionDetectionError(GamingAutomationError):
-    """Raised when template matching or visual recognition fails on game UI."""
+def handle_exception(e: Exception) -> None:
+    """Centralized error reporting logic."""
+    if isinstance(e, AutomationError):
+        print(f"[Automation Error]: {e}")
+    else:
+        print(f"[Unexpected System Error]: {str(e)}")
 
-    def __init__(self, element_name: str, confidence: float, threshold: float):
-        self.element_name = element_name
-        self.confidence = confidence
-        self.threshold = threshold
-        super().__init__(
-            f"Failed to detect HUD element '{element_name}' "
-            f"(confidence {confidence:.2f} < threshold {threshold:.2f})."
-        )
+class ErrorFactory:
+    """Factory for standardized error instantiation."""
+    @staticmethod
+    def create_process_error(pid: int) -> GameProcessError:
+        return GameProcessError(f"Unable to attach to process ID: {pid}")
 
-
-class AntiCheatSafetyTriggered(GamingAutomationError):
-    """Raised when anomalous delays or heuristic flags demand immediate abort."""
-
-    def __init__(self, reason: str = "Suspicious input rate detected"):
-        self.reason = reason
-        super().__init__(f"Safety emergency stop triggered: {reason}")
-
-
-class SequenceTimeoutError(GamingAutomationError):
-    """Raised when an automated macro/action stalls beyond allowed time."""
-
-    def __init__(self, sequence_id: str, elapsed: float, max_allowed: float):
-        self.sequence_id = sequence_id
-        self.elapsed = elapsed
-        self.max_allowed = max_allowed
-        super().__init__(
-            f"Sequence '{sequence_id}' timed out after {elapsed:.1f}s "
-            f"(limit: {max_allowed:.1f}s)."
-        )
+    @staticmethod
+    def create_config_error(key: str) -> ConfigValidationError:
+        return ConfigValidationError(f"Missing required configuration key: {key}")
