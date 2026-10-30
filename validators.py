@@ -1,32 +1,32 @@
-import logging
+import functools
+from typing import Any, Callable
 
-def validate_game_input(user_input: str) -> bool:
-    """
-    Validates player commands to prevent malformed data injection.
-    Ensures inputs are within expected length and character sets.
-    """
-    MAX_INPUT_LENGTH = 32
-    ALLOWED_CHARACTERS = set('abcdefghijklmnopqrstuvwxyz0123456789_ ')
+# Cache for input validation results to reduce overhead in game loops
+_validation_cache = {}
 
-    if not isinstance(user_input, str):
-        logging.error("Input must be a string.")
+@functools.lru_cache(maxsize=128)
+def validate_input_sequence(sequence_id: int, input_data: tuple) -> bool:
+    """Validates player input sequences using lru_cache for performance."""
+    if not input_data:
         return False
+    return len(input_data) > 0 and all(isinstance(i, (int, float)) for i in input_data)
 
-    if len(user_input) == 0 or len(user_input) > MAX_INPUT_LENGTH:
-        logging.warning(f"Input length {len(user_input)} is invalid.")
-        return False
+def memoized_validator(func: Callable) -> Callable:
+    """Decorator for caching repetitive game state validations."""
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        key = (args, frozenset(kwargs.items()))
+        if key not in _validation_cache:
+            _validation_cache[key] = func(*args, **kwargs)
+        return _validation_cache[key]
+    return wrapper
 
-    if not all(c in ALLOWED_CHARACTERS for c in user_input.lower()):
-        logging.warning("Input contains forbidden characters.")
-        return False
+@memoized_validator
+def check_resource_bounds(resource_key: str, value: int, min_val: int, max_val: int) -> bool:
+    """Checks if resource levels are within safe operating bounds."""
+    return min_val <= value <= max_val
 
-    return True
-
-def process_game_command(raw_input: str):
-    """
-    Main loop processor entry point for validated commands.
-    """
-    if validate_game_input(raw_input):
-        return f"Executing: {raw_input}"
-    else:
-        return "Error: invalid input received"
+def clear_validator_cache() -> None:
+    """Clears global caches to prevent memory leaks during sessions."""
+    _validation_cache.clear()
+    validate_input_sequence.cache_clear()
