@@ -1,32 +1,52 @@
-import functools
-from typing import Any, Callable
+"""Validation utilities for gaming telemetry and player data payload handling."""
 
-# Cache for input validation results to reduce overhead in game loops
-_validation_cache = {}
+import re
+from typing import Any, Dict, List, Tuple
 
-@functools.lru_cache(maxsize=128)
-def validate_input_sequence(sequence_id: int, input_data: tuple) -> bool:
-    """Validates player input sequences using lru_cache for performance."""
-    if not input_data:
+PLAYER_ID_REGEX = re.compile(r"^[a-zA-Z0-9_-]{3,16}$")
+VALID_PLATFORMS = {"pc", "ps5", "xbox", "switch", "mobile"}
+VALID_ITEM_RARITIES = {"common", "uncommon", "rare", "epic", "legendary"}
+
+
+def validate_player_id(player_id: str) -> bool:
+    """Validate username or player ID format."""
+    if not isinstance(player_id, str):
         return False
-    return len(input_data) > 0 and all(isinstance(i, (int, float)) for i in input_data)
+    return bool(PLAYER_ID_REGEX.match(player_id))
 
-def memoized_validator(func: Callable) -> Callable:
-    """Decorator for caching repetitive game state validations."""
-    @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        key = (args, frozenset(kwargs.items()))
-        if key not in _validation_cache:
-            _validation_cache[key] = func(*args, **kwargs)
-        return _validation_cache[key]
-    return wrapper
 
-@memoized_validator
-def check_resource_bounds(resource_key: str, value: int, min_val: int, max_val: int) -> bool:
-    """Checks if resource levels are within safe operating bounds."""
-    return min_val <= value <= max_val
+def validate_match_payload(payload: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    """Validate incoming match telemetry data payload.
 
-def clear_validator_cache() -> None:
-    """Clears global caches to prevent memory leaks during sessions."""
-    _validation_cache.clear()
-    validate_input_sequence.cache_clear()
+    Returns a tuple of (is_valid, list_of_errors).
+    """
+    errors = []
+
+    if not isinstance(payload, dict):
+        return False, ["Payload must be a dictionary"]
+
+    required_fields = ["match_id", "player_id", "platform", "score", "kills"]
+    for field in required_fields:
+        if field not in payload:
+            errors.append(f"Missing required field: '{field}'")
+
+    if "player_id" in payload and not validate_player_id(str(payload["player_id"])):
+        errors.append("Invalid 'player_id' format")
+
+    if "platform" in payload and str(payload["platform"]).lower() not in VALID_PLATFORMS:
+        errors.append(f"Invalid platform '{payload.get('platform')}'. Must be one of {VALID_PLATFORMS}")
+
+    if "score" in payload and (not isinstance(payload["score"], (int, float)) or payload["score"] < 0):
+        errors.append("Score must be a non-negative number")
+
+    if "kills" in payload and (not isinstance(payload["kills"], int) or payload["kills"] < 0):
+        errors.append("Kills must be a non-negative integer")
+
+    return len(errors) == 0, errors
+
+
+def validate_item_rarity(rarity: str) -> bool:
+    """Check if the item rarity string is recognized."""
+    if not isinstance(rarity, str):
+        return False
+    return rarity.lower() in VALID_ITEM_RARITIES
