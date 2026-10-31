@@ -1,36 +1,35 @@
-import time
-import random
-import logging
+import json
+from typing import Dict, Any, Optional
 
-# Configure basic logger for automation operations
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('automation-tool-39')
+def sanitize_game_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Removes sensitive keys and normalizes player stats."""
+    sensitive_keys = {'session_token', 'password', 'raw_ip'}
+    clean_data = {k: v for k, v in raw_data.items() if k not in sensitive_keys}
 
-def sleep_randomly(min_sec: float = 1.0, max_sec: float = 3.0):
-    """Simulates human-like delay between gaming actions."""
-    delay = random.uniform(min_sec, max_sec)
-    time.sleep(delay)
+    # Normalize stats if present
+    if 'xp' in clean_data:
+        clean_data['xp'] = int(clean_data['xp'])
+    
+    return clean_data
 
-def format_timestamp(ts: float) -> str:
-    """Converts epoch time to a readable string for logs."""
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))
+def export_to_json(data: Dict[str, Any], file_path: str) -> bool:
+    """Serializes game session data to disk."""
+    try:
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        return True
+    except (IOError, TypeError):
+        return False
 
-def retry_operation(func, retries: int = 3, delay: float = 2.0):
-    """Simple decorator logic for unstable game API calls."""
-    for attempt in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            logger.warning(f"Attempt {attempt + 1} failed: {e}")
-            if attempt == retries - 1:
-                raise
-            time.sleep(delay)
+def calculate_win_rate(wins: int, losses: int) -> float:
+    """Safely calculates player win ratio."""
+    total = wins + losses
+    if total == 0:
+        return 0.0
+    return round((wins / total) * 100, 2)
 
-def get_screen_center(width: int, height: int) -> tuple:
-    """Calculates coordinate center for UI interaction."""
-    return (width // 2, height // 2)
-
-def validate_game_process(process_name: str) -> bool:
-    """Placeholder for system process existence check."""
-    import psutil
-    return any(p.name() == process_name for p in psutil.process_iter(['name']))
+def get_session_info(data: Dict[str, Any]) -> str:
+    """Formats basic session metadata for logs."""
+    player = data.get('username', 'Unknown')
+    level = data.get('level', 1)
+    return f"Player: {player} | Level: {level}"
