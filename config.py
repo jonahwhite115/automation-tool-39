@@ -1,28 +1,30 @@
 import os
-from typing import Dict, Any, Optional
+from pathlib import Path
+from typing import Dict, Any
 
-class GameConfig:
-    """Configuration manager for automation-tool-39 game profiles."""
+# Project path constants for automation-tool-39
+BASE_DIR = Path(__file__).resolve().parent
+LOG_DIR = BASE_DIR / "logs"
+DATA_DIR = BASE_DIR / "data"
 
-    def __init__(self, profile_name: str = "default") -> None:
-        self.profile_name: str = profile_name
-        self.settings: Dict[str, Any] = {
-            "fps_cap": 60,
-            "auto_loot": True,
-            "macro_delay": 0.5
-        }
+# Configuration dictionary for game automation parameters
+SETTINGS: Dict[str, Any] = {
+    "max_retries": 3,
+    "polling_interval": 0.5,
+    "headless_mode": True,
+    "target_game": "automation-tool-39-client",
+    "auto_save": True,
+    "resolution": (1920, 1080),
+}
 
-    def load_profile(self, path: str) -> bool:
-        """Loads game settings from a specified file path."""
-        if not os.path.exists(path):
-            return False
-        # Simulation of file reading logic
-        return True
+def setup_environment() -> None:
+    """Ensures necessary directories exist for tool runtime."""
+    for directory in [LOG_DIR, DATA_DIR]:
+        directory.mkdir(parents=True, exist_ok=True)
 
-    def update_setting(self, key: str, value: Any) -> None:
-        """Updates a specific setting key with a new value."""
-        self.settings[key] = value
+def get_setting(key: str, default: Any = None) -> Any:
+    """Retrieves a setting with a fallback mechanism."""
+    return SETTINGS.get(key, default)
 
-    def get_setting(self, key: str, default: Optional[Any] = None) -> Any:
-        """Retrieves a setting by key with an optional default."""
-        return self.settings.get(key, default)
+# Initialize environment paths on module import
+setup_environment()
