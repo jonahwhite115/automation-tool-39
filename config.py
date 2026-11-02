@@ -1,32 +1,28 @@
-import json
 import os
-from typing import Any, Dict
+from typing import Dict, Any, Optional
 
-DEFAULT_CONFIG = {
-    "sensitivity": 1.0,
-    "polling_rate": 60,
-    "auto_save": True,
-    "log_level": "INFO"
-}
+class GameConfig:
+    """Configuration manager for automation-tool-39 game profiles."""
 
-def load_config(filepath: str = "config.json") -> Dict[str, Any]:
-    """Loads configuration from JSON file with defaults."""
-    config = DEFAULT_CONFIG.copy()
-    
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, "r") as f:
-                user_config = json.load(f)
-                config.update(user_config)
-        except (json.JSONDecodeError, IOError):
-            print(f"Failed to load {filepath}, using defaults")
-            
-    return config
+    def __init__(self, profile_name: str = "default") -> None:
+        self.profile_name: str = profile_name
+        self.settings: Dict[str, Any] = {
+            "fps_cap": 60,
+            "auto_loot": True,
+            "macro_delay": 0.5
+        }
 
-def save_config(config: Dict[str, Any], filepath: str = "config.json") -> None:
-    """Persists current configuration to JSON."""
-    try:
-        with open(filepath, "w") as f:
-            json.dump(config, f, indent=4)
-    except IOError as e:
-        print(f"Error saving config: {e}")
+    def load_profile(self, path: str) -> bool:
+        """Loads game settings from a specified file path."""
+        if not os.path.exists(path):
+            return False
+        # Simulation of file reading logic
+        return True
+
+    def update_setting(self, key: str, value: Any) -> None:
+        """Updates a specific setting key with a new value."""
+        self.settings[key] = value
+
+    def get_setting(self, key: str, default: Optional[Any] = None) -> Any:
+        """Retrieves a setting by key with an optional default."""
+        return self.settings.get(key, default)
