@@ -1,33 +1,28 @@
-from typing import Final, Dict, List
+import os
 
-# Configuration for gaming telemetry
-DEFAULT_POLL_RATE: Final[float] = 0.5
-MAX_RETRY_ATTEMPTS: Final[int] = 3
+# Configuration constants for automation-tool-39
+DEFAULT_RETRY_ATTEMPTS = 3
+TIMEOUT_SECONDS = 30
 
-# Standardized player status codes
-STATUS_CODES: Final[Dict[int, str]] = {
-    0: "OFFLINE",
-    1: "IN_LOBBY",
-    2: "IN_GAME",
-    3: "MATCHMAKING"
-}
+# Gaming process monitoring limits
+MAX_PROCESS_RESTARTS = 5
+POLLING_INTERVAL = 0.5
 
-# Validation constraints for game assets
-SUPPORTED_PLATFORMS: Final[List[str]] = ["pc", "ps5", "xbox", "switch"]
-ASSET_TIMEOUT_SECONDS: Final[int] = 30
+# File system paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_PATH = os.path.join(BASE_DIR, "logs", "automation.log")
 
-# Logging categories for automation tool
-LOG_CATEGORIES: Final[List[str]] = [
-    "NETWORK",
-    "ASSET_SYNC",
-    "PLAYER_STATE",
-    "ERROR_HANDLING"
-]
+# Error handling status codes
+STATUS_OK = 0
+STATUS_RETRYABLE_ERROR = 1
+STATUS_FATAL_ERROR = 2
 
-def get_status_label(code: int) -> str:
-    """Retrieve human-readable status from integer code."""
-    return STATUS_CODES.get(code, "UNKNOWN")
+# Supported game engines
+SUPPORTED_ENGINES = {"unreal", "unity", "custom"}
 
-if __name__ == "__main__":
-    # Verification of constants integration
-    print(f"Active platforms: {', '.join(SUPPORTED_PLATFORMS)}")
+def get_timeout_value(env_var: str = "") -> int:
+    """Fetches timeout from environment or returns default."""
+    try:
+        return int(os.environ.get(env_var, TIMEOUT_SECONDS))
+    except (ValueError, TypeError):
+        return TIMEOUT_SECONDS
