@@ -2,30 +2,33 @@ import time
 import functools
 import logging
 
-logger = logging.getLogger(__name__)
+# Logger setup for automation-tool-39
+logger = logging.getLogger('automation-tool-39')
 
-class NetworkError(Exception):
-    """Custom exception for network-related failures."""
-    pass
-
-def retry_on_failure(max_attempts=3, delay=2):
-    """Decorator for retrying network operations with exponential backoff."""
+def retry_on_network_failure(max_retries=3, delay=2):
+    """Decorator to retry network-dependent operations."""
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             attempts = 0
-            current_delay = delay
-            while attempts < max_attempts:
+            while attempts < max_retries:
                 try:
                     return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError, NetworkError) as e:
+                except (ConnectionError, TimeoutError) as e:
                     attempts += 1
-                    if attempts >= max_attempts:
-                        logger.error(f"Final attempt {attempts} failed: {e}")
+                    if attempts >= max_retries:
+                        logger.error(f"Failed after {max_retries} attempts: {e}")
                         raise
-                    
-                    logger.warning(f"Attempt {attempts} failed, retrying in {current_delay}s...")
-                    time.sleep(current_delay)
-                    current_delay *= 2
+                    logger.warning(f"Attempt {attempts} failed, retrying in {delay}s...")
+                    time.sleep(delay)
+            return None
         return wrapper
     return decorator
+
+class NetworkError(Exception):
+    """Custom exception for gaming network services."""
+    pass
+
+class RateLimitError(Exception):
+    """Raised when API requests exceed threshold."""
+    pass
