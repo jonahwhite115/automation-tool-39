@@ -3,30 +3,34 @@ import os
 from typing import Any, Dict
 
 DEFAULT_CONFIG = {
-    "window_width": 1280,
-    "window_height": 720,
     "fps_limit": 60,
-    "auto_clicker_enabled": False,
-    "macro_delay": 0.5
+    "auto_loot": True,
+    "hotkey_profile": "default",
+    "debug_mode": False
 }
 
-def load_config(filepath: str = "config.json") -> Dict[str, Any]:
+def load_configuration(filepath: str) -> Dict[str, Any]:
     """Loads configuration from JSON file with fallback to defaults."""
     config = DEFAULT_CONFIG.copy()
     
     if not os.path.exists(filepath):
         return config
-        
+
     try:
-        with open(filepath, "r") as f:
-            user_config = json.load(f)
-            config.update(user_config)
+        with open(filepath, 'r') as f:
+            user_data = json.load(f)
+            # Update default values with user-provided settings
+            config.update({k: v for k, v in user_data.items() if k in DEFAULT_CONFIG})
     except (json.JSONDecodeError, IOError):
+        # In case of corruption, return established defaults
         pass
         
     return config
 
-def save_config(config: Dict[str, Any], filepath: str = "config.json") -> None:
-    """Persists current configuration dictionary to disk."""
-    with open(filepath, "w") as f:
-        json.dump(config, f, indent=4)
+def save_configuration(filepath: str, config: Dict[str, Any]) -> None:
+    """Persists current configuration state to disk."""
+    try:
+        with open(filepath, 'w') as f:
+            json.dump(config, f, indent=4)
+    except IOError as e:
+        print(f"Failed to save config: {e}")
