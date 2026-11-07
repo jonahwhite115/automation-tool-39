@@ -1,44 +1,33 @@
-"""Game constants and configuration parameters for automation-tool-39."""
+import os
 
-from enum import Enum
-from typing import Dict, Final, Tuple
+# Configuration paths for gaming automation
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 
+# Default application settings
+DEFAULT_TIMEOUT = 30
+MAX_RETRIES = 3
+POLLING_INTERVAL = 0.5
 
-class GameState(Enum):
-    """Enumeration of recognized in-game state screens."""
+# Gaming specific constants
+SCREEN_RESOLUTION = (1920, 1080)
+CAPTURE_REGION = (0, 0, 1920, 1080)
+PIXEL_TOLERANCE = 5
 
-    UNKNOWN: int = 0
-    MAIN_MENU: int = 1
-    IN_GAME: int = 2
-    INVENTORY_OPEN: int = 3
-    LOADING: int = 4
+# Supported input mechanisms
+INPUT_METHODS = ['keyboard', 'mouse', 'direct_input']
 
+# Resource cleanup settings
+TEMP_FILE_PREFIX = 'auto_'
+CLEANUP_EXTENSIONS = ['.tmp', '.log.old']
 
-# Target rendering resolution for template matching
-TARGET_RESOLUTION: Final[Tuple[int, int]] = (1920, 1080)
+def get_resource_path(filename: str) -> str:
+    """Constructs full path for internal game resources."""
+    return os.path.join(DATA_DIR, filename)
 
-# Main loop execution speed parameters
-TARGET_FPS: Final[int] = 60
-FRAME_DELAY: Final[float] = 1.0 / TARGET_FPS
-
-# RGB color targets for UI detection
-HEALTH_BAR_COLOR: Final[Tuple[int, int, int]] = (220, 40, 40)
-MANA_BAR_COLOR: Final[Tuple[int, int, int]] = (40, 100, 220)
-
-# Default keybindings for standard macro controls
-DEFAULT_KEYMAP: Final[Dict[str, str]] = {
-    "move_forward": "w",
-    "move_backward": "s",
-    "strafe_left": "a",
-    "strafe_right": "d",
-    "use_potion": "1",
-    "open_inventory": "i",
-    "primary_skill": "space",
-}
-
-# Inventory grid specification (rows, columns)
-INVENTORY_SLOTS: Final[Tuple[int, int]] = (5, 8)
-
-# Detection threshold tolerances
-COLOR_MATCH_TOLERANCE: Final[float] = 0.85
-ACTION_TIMEOUT_SECONDS: Final[float] = 10.0
+# Exit codes for the automation engine
+STATUS_SUCCESS = 0
+STATUS_ERROR_INIT = 1
+STATUS_ERROR_EXECUTION = 2
+STATUS_ERROR_CLEANUP = 3
