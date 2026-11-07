@@ -1,34 +1,26 @@
-import time
-import functools
-import logging
-
-# Logger setup for automation-tool-39
-logger = logging.getLogger('automation-tool-39')
-
-def retry_on_network_failure(max_retries=3, delay=2):
-    """Decorator to retry network-dependent operations."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            attempts = 0
-            while attempts < max_retries:
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    attempts += 1
-                    if attempts >= max_retries:
-                        logger.error(f"Failed after {max_retries} attempts: {e}")
-                        raise
-                    logger.warning(f"Attempt {attempts} failed, retrying in {delay}s...")
-                    time.sleep(delay)
-            return None
-        return wrapper
-    return decorator
-
-class NetworkError(Exception):
-    """Custom exception for gaming network services."""
+class AutomationError(Exception):
+    """Base exception for the automation-tool-39 package."""
     pass
 
-class RateLimitError(Exception):
-    """Raised when API requests exceed threshold."""
+class ResourceNotFoundError(AutomationError):
+    """Raised when a required game asset is missing."""
     pass
+
+class ConfigurationError(AutomationError):
+    """Raised when settings are invalid or malformed."""
+    pass
+
+class ConnectionTimeoutError(AutomationError):
+    """Raised when game client interaction fails to respond."""
+    pass
+
+class ValidationError(AutomationError):
+    """Raised when input parameters fail verification checks."""
+    pass
+
+def handle_automation_error(e: Exception) -> None:
+    """Centralized error reporting wrapper for the engine."""
+    if isinstance(e, AutomationError):
+        print(f"[Automation Error] {e.__class__.__name__}: {str(e)}")
+    else:
+        print(f"[Unexpected Error] {str(e)}")
