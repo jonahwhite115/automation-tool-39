@@ -1,26 +1,25 @@
 class AutomationError(Exception):
-    """Base exception for the automation-tool-39 package."""
-    pass
+    """Base exception for automation-tool-39."""
 
 class ResourceNotFoundError(AutomationError):
-    """Raised when a required game asset is missing."""
-    pass
-
-class ConfigurationError(AutomationError):
-    """Raised when settings are invalid or malformed."""
-    pass
+    """Raised when a game asset is missing."""
 
 class ConnectionTimeoutError(AutomationError):
-    """Raised when game client interaction fails to respond."""
-    pass
+    """Raised when the game process fails to respond."""
 
 class ValidationError(AutomationError):
-    """Raised when input parameters fail verification checks."""
-    pass
+    """Raised when user configuration is invalid."""
 
-def handle_automation_error(e: Exception) -> None:
-    """Centralized error reporting wrapper for the engine."""
-    if isinstance(e, AutomationError):
-        print(f"[Automation Error] {e.__class__.__name__}: {str(e)}")
+def handle_automation_error(error: Exception) -> None:
+    """Standardized logging for internal application exceptions."""
+    if isinstance(error, AutomationError):
+        print(f"[Automation Error]: {str(error)}")
     else:
-        print(f"[Unexpected Error] {str(e)}")
+        print(f"[Critical System Fault]: {str(error)}")
+
+def validate_resource(resource_path: str) -> bool:
+    """Check resource existence with custom exception raising."""
+    import os
+    if not os.path.exists(resource_path):
+        raise ResourceNotFoundError(f"Resource at {resource_path} not found")
+    return True
