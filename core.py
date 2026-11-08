@@ -1,32 +1,36 @@
-import time
 import functools
-import logging
+import time
+from typing import Callable, Any
 
-logger = logging.getLogger(__name__)
+# Cache for frequently accessed game state properties
+_state_cache = {}
 
-def retry_network_op(retries=3, delay=2, backoff=2):
-    """Decorator for retrying network operations with exponential backoff."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            current_delay = delay
-            for attempt in range(retries):
-                try:
-                    return func(*args, **kwargs)
-                except (ConnectionError, TimeoutError) as e:
-                    if attempt == retries - 1:
-                        logger.error(f"Final attempt failed for {func.__name__}: {e}")
-                        raise
-                    
-                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {current_delay}s...")
-                    time.sleep(current_delay)
-                    current_delay *= backoff
-        return wrapper
-    return decorator
+def memoize_state(func: Callable) -> Callable:
+    """Performance decorator to reduce repetitive game state calculations."""
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        key = (func.__name__, args, tuple(kwargs.items()))
+        if key not in _state_cache:
+            _state_cache[key] = func(*args, **kwargs)
+        return _state_cache[key]
+    return wrapper
 
-@retry_network_op(retries=3, delay=1)
-def fetch_game_data(endpoint):
-    """Example network call for gaming data."""
-    # Simulating actual network logic here
-    logger.info(f"Fetching data from {endpoint}")
-    return {"status": "success", "data": "payload"}
+class EngineProcessor:
+    """Handles high-frequency automation loops with optimized cycles."""
+    def __init__(self, tick_rate: float = 0.1):
+        self.tick_rate = tick_rate
+
+    @memoize_state
+    def get_world_coordinates(self, entity_id: int) -> tuple:
+        # Simulate intensive coordinate lookup operation
+        time.sleep(0.01)
+        return (entity_id * 1.5, entity_id * 2.0)
+
+    def run_cycle(self, entity_id: int):
+        # Execute logic using cached data to reduce latency
+        coords = self.get_world_coordinates(entity_id)
+        return f"Processing entity at {coords}"
+
+def clear_cache():
+    """Manual memory management for automation sessions."""
+    _state_cache.clear()
