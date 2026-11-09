@@ -1,36 +1,38 @@
-import json
-from typing import Dict, Any, Optional
+import time
+import logging
+from typing import Any, Callable, Optional
 
-def normalize_game_stats(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    standardizes player performance metrics from raw telemetry
-    """
-    normalized = {
-        "player_id": data.get("uid", "unknown"),
-        "score": int(data.get("points", 0)),
-        "kda": float(data.get("kills", 0)) / max(1, int(data.get("deaths", 1))),
-        "is_active": data.get("status") == "online"
-    }
-    return normalized
+logger = logging.getLogger('automation-tool-39')
 
-def save_session_data(filepath: str, data: Dict[str, Any]) -> bool:
-    """
-    persistence layer for gaming session payloads
-    """
-    try:
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=4)
-        return True
-    except (IOError, TypeError) as e:
-        print(f"serialization failure: {e}")
-        return False
+def retry_operation(func: Callable, retries: int = 3, delay: float = 1.0) -> Any:
+    """Retry logic for unstable game server requests."""
+    last_exception = None
+    for attempt in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            last_exception = e
+            logger.warning(f"Attempt {attempt + 1} failed: {e}")
+            time.sleep(delay)
+    raise last_exception
 
-def parse_match_payload(raw_json: str) -> Optional[Dict[str, Any]]:
-    """
-    safe parsing for external match data packets
-    """
-    try:
-        payload = json.loads(raw_json)
-        return payload if isinstance(payload, dict) else None
-    except json.JSONDecodeError:
-        return None
+def format_game_coords(x: float, y: float, z: float) -> str:
+    """Standardized coordinate string formatting for game engine."""
+    return f"[{x:.2f}, {y:.2f}, {z:.2f}]"
+
+def get_input_validation(value: Any, min_val: float, max_val: float) -> float:
+    """Clamp numeric inputs to valid game ranges."""
+    return float(max(min_val, min(value, max_val)))
+
+def throttle_execution(interval: float):
+    """Decorator for rate limiting game actions."""
+    def decorator(func: Callable):
+        last_called = [0.0]
+        def wrapper(*args, **kwargs):
+            elapsed = time.time() - last_called[0]
+            if elapsed < interval:
+                time.sleep(interval - elapsed)
+            last_called[0] = time.time()
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
