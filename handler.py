@@ -1,60 +1,33 @@
-"""Game event handler module for processing automated in-game actions."""
+import logging
+from typing import Any, Optional
 
-import time
-from typing import Any, Dict, List, Optional
+logger = logging.getLogger('automation-tool-39')
 
+class GameProcessError(Exception):
+    """Custom exception for gaming automation failures."""
+    pass
 
-class GameEventHandler:
-    """Processes and executes automated game macros and event sequences."""
+def execute_safe_action(action_func: callable, *args: Any, **kwargs: Any) -> Optional[Any]:
+    """Executes a game action with robust error handling for edge cases."""
+    try:
+        return action_func(*args, **kwargs)
+    except (ConnectionError, TimeoutError) as e:
+        logger.error(f"Network interruption during game task: {e}")
+        return None
+    except ValueError as e:
+        logger.warning(f"Invalid data state in automation: {e}")
+        return None
+    except Exception as e:
+        logger.critical(f"Unexpected automation failure: {type(e).__name__} - {e}")
+        raise GameProcessError(f"Failed to execute action: {action_func.__name__}") from e
 
-    def __init__(self, target_window: str, cooldown: float = 0.5) -> None:
-        """Initialize the handler with target window name and default action cooldown."""
-        self.target_window: str = target_window
-        self.cooldown: float = cooldown
-        self.history: List[Dict[str, Any]] = []
-
-    def execute_action(self, action_type: str, payload: Dict[str, Any]) -> bool:
-        """Execute a specific gaming action macro.
-
-        Args:
-            action_type: Name of the action command (e.g., 'cast_spell', 'use_item').
-            payload: Parameters required for action execution.
-
-        Returns:
-            True if execution succeeded, False otherwise.
-        """
-        if not action_type or not isinstance(payload, dict):
-            return False
-
-        timestamp: float = time.time()
-        record: Dict[str, Any] = {
-            "action": action_type,
-            "payload": payload,
-            "timestamp": timestamp,
-            "status": "success",
-        }
-
-        time.sleep(min(self.cooldown, 0.1))
-        self.history.append(record)
+def validate_game_state(state: dict) -> bool:
+    """Checks game state dictionary for critical keys before processing."""
+    required_keys = {'player_pos', 'inventory_count', 'session_id'}
+    try:
+        if not all(k in state for k in required_keys):
+            raise ValueError("Missing essential game state telemetry")
         return True
-
-    def get_recent_actions(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Retrieve the last N actions executed by this handler.
-
-        Args:
-            limit: Maximum number of recent actions to return.
-
-        Returns:
-            List of action history records.
-        """
-        return self.history[-limit:] if limit > 0 else []
-
-    def clear_history(self) -> int:
-        """Clear all recorded action history.
-
-        Returns:
-            Count of removed history items.
-        """
-        count: int = len(self.history)
-        self.history.clear()
-        return count
+    except (TypeError, ValueError) as e:
+        logger.error(f"State validation failed: {e}")
+        return False
