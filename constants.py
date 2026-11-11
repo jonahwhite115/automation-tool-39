@@ -1,44 +1,32 @@
-from typing import Final, Dict, List
+import os
 
-# Configuration constants for automation-tool-39 gaming sessions
+# Gaming automation configuration defaults
+POLL_RATE = 0.5
+MAX_RETRIES = 3
+TIMEOUT_SECONDS = 30
 
-# Supported game resolution modes
-RESOLUTION_MODES: Final[Dict[str, tuple]] = {
-    "1080p": (1920, 1080),
-    "1440p": (2560, 1440),
-    "4k": (3840, 2160),
+# Supported game client processes
+SUPPORTED_CLIENTS = {
+    "VALORANT": "VALORANT-Win64-Shipping.exe",
+    "LEAGUE": "League of Legends.exe",
+    "DOTA2": "dota2.exe"
 }
 
-# Default interval settings for polling automation
-POLLING_INTERVALS: Final[Dict[str, float]] = {
-    "fast": 0.1,
-    "normal": 0.5,
-    "slow": 1.0,
-}
+# Directories for resource storage
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+SCREENSHOT_DIR = os.path.join(BASE_DIR, "screenshots")
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 
-# API endpoints for game server interactions
-API_ENDPOINTS: Final[Dict[str, str]] = {
-    "status": "https://api.gaming-server.local/v1/status",
-    "telemetry": "https://api.gaming-server.local/v1/telemetry",
-    "action": "https://api.gaming-server.local/v1/input",
-}
+# Coordinate defaults for screen capture
+DEFAULT_RESOLUTION = (1920, 1080)
+CAPTURE_REGION = (0, 0, 1920, 1080)
 
-# Maximum retry attempts for network operations
-MAX_RETRIES: Final[int] = 5
+# Logging levels and formats
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_LEVEL = "INFO"
 
-# Supported character classes within the game environment
-CHARACTER_CLASSES: Final[List[str]] = [
-    "warrior",
-    "mage",
-    "rogue",
-    "paladin",
-    "ranger"
-]
-
-# Global timeout duration for blocking operations in seconds
-CONNECTION_TIMEOUT: Final[float] = 30.0
-
-def get_resolution_aspect_ratio(mode: str) -> float:
-    """Calculates aspect ratio for a specific resolution mode."""
-    width, height = RESOLUTION_MODES.get(mode, (1920, 1080))
-    return width / height
+# Exit signals and status codes
+STATUS_SUCCESS = 0
+STATUS_ERROR = 1
+SHUTDOWN_SIGNAL = "SIGINT"
