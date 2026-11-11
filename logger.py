@@ -1,35 +1,54 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
-import os
+from pathlib import Path
 
-def setup_logger(name: str, log_file: str = 'automation.log'):
-    """Configures a robust logger for gaming tasks."""
+DEFAULT_LOG_FORMAT = "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"
+DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def setup_logger(
+    name: str = "game_bot",
+    log_file: str = "logs/automation.log",
+    log_level: int = logging.INFO,
+    max_bytes: int = 5 * 1024 * 1024,
+    backup_count: int = 5
+) -> logging.Logger:
+    """
+    Configures and returns a logger instance with stream and rotating file handlers.
+    Prevents log clutter during continuous gaming automation runs.
+    """
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(log_level)
 
-    # Prevent duplicate handlers if re-initialized
-    if not logger.handlers:
-        try:
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            
-            # File handler with fallback if disk is full or path restricted
-            try:
-                file_handler = logging.FileHandler(log_file)
-                file_handler.setFormatter(formatter)
-                logger.addHandler(file_handler)
-            except (IOError, OSError) as e:
-                sys.stderr.write(f"Logging fallback to stderr: {e}\n")
-                
-            # Console stream handler
-            console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
-            
-        except Exception as e:
-            # Final safety check for logging system critical failure
-            sys.stderr.write(f"Fatal logging setup failure: {e}\n")
-    
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    formatter = logging.Formatter(DEFAULT_LOG_FORMAT, datefmt=DEFAULT_DATE_FORMAT)
+
+    # Create log directory if it does not exist
+    log_path = Path(log_file)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Rotating file handler for persistent logs
+    file_handler = RotatingFileHandler(
+        filename=log_path,
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+        encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(log_level)
+    logger.addHandler(file_handler)
+
+    # Console handler for real-time output during bot execution
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(log_level)
+    logger.addHandler(console_handler)
+
     return logger
 
-# Global logger instance for the automation tool
-log = setup_logger('automation-tool-39')
+
+# Default logger instance ready for imports across automation modules
+bot_logger = setup_logger()
