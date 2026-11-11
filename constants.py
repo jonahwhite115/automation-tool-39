@@ -1,32 +1,31 @@
 import os
 
-# Gaming automation configuration defaults
-POLL_RATE = 0.5
-MAX_RETRIES = 3
-TIMEOUT_SECONDS = 30
+# Screen coordinate ratios for resolution independence
+SCREEN_CENTER = (0.5, 0.5)
+DEFAULT_TOLERANCE = 0.05
 
-# Supported game client processes
-SUPPORTED_CLIENTS = {
-    "VALORANT": "VALORANT-Win64-Shipping.exe",
-    "LEAGUE": "League of Legends.exe",
-    "DOTA2": "dota2.exe"
+# Gaming automation constants
+DEFAULT_FRAME_RATE = 60
+RETRY_ATTEMPTS = 3
+TIMEOUT_SECONDS = 10.0
+
+# Directory structures for automation-tool-39
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_PATH = os.path.join(BASE_DIR, 'assets')
+LOG_PATH = os.path.join(BASE_DIR, 'logs')
+
+# User agent and API keys
+DEFAULT_HEADERS = {
+    'User-Agent': 'AutomationTool39-Bot/1.0',
+    'Accept': 'application/json'
 }
 
-# Directories for resource storage
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-SCREENSHOT_DIR = os.path.join(BASE_DIR, "screenshots")
-CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+# Supported game state codes
+STATE_IDLE = 0
+STATE_INGAME = 1
+STATE_MENU = 2
+STATE_ERROR = -1
 
-# Coordinate defaults for screen capture
-DEFAULT_RESOLUTION = (1920, 1080)
-CAPTURE_REGION = (0, 0, 1920, 1080)
-
-# Logging levels and formats
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-LOG_LEVEL = "INFO"
-
-# Exit signals and status codes
-STATUS_SUCCESS = 0
-STATUS_ERROR = 1
-SHUTDOWN_SIGNAL = "SIGINT"
+# Thresholds for visual recognition
+CONFIDENCE_THRESHOLD = 0.85
+COLOR_MATCH_EPSILON = 10
