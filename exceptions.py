@@ -1,25 +1,24 @@
-class AutomationError(Exception):
-    """Base exception for automation-tool-39."""
+class GamingAutomationError(Exception):
+    """Base exception for automation-tool-39 operations."""
+    pass
 
-class ResourceNotFoundError(AutomationError):
-    """Raised when a game asset is missing."""
+class DataParsingError(GamingAutomationError):
+    """Raised when raw game data cannot be decoded."""
+    pass
 
-class ConnectionTimeoutError(AutomationError):
-    """Raised when the game process fails to respond."""
+class ResourceNotFoundError(GamingAutomationError):
+    """Raised when a game entity cannot be located."""
+    pass
 
-class ValidationError(AutomationError):
-    """Raised when user configuration is invalid."""
+class StateTransitionError(GamingAutomationError):
+    """Raised when an invalid game state occurs."""
+    def __init__(self, current_state, target_state):
+        super().__init__(f"Cannot transition from {current_state} to {target_state}")
 
-def handle_automation_error(error: Exception) -> None:
-    """Standardized logging for internal application exceptions."""
-    if isinstance(error, AutomationError):
-        print(f"[Automation Error]: {str(error)}")
-    else:
-        print(f"[Critical System Fault]: {str(error)}")
-
-def validate_resource(resource_path: str) -> bool:
-    """Check resource existence with custom exception raising."""
-    import os
-    if not os.path.exists(resource_path):
-        raise ResourceNotFoundError(f"Resource at {resource_path} not found")
+def validate_game_payload(payload: dict):
+    """Ensures incoming data contains required keys for processing."""
+    required_keys = {"session_id", "timestamp", "action_type"}
+    if not required_keys.issubset(payload.keys()):
+        missing = required_keys - payload.keys()
+        raise DataParsingError(f"Payload missing required fields: {missing}")
     return True
