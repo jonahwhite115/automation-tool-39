@@ -1,38 +1,51 @@
-import logging
 import os
-from datetime import datetime
+import sys
+import logging
+from logging.handlers import RotatingFileHandler
 
-class AutomationLogger:
-    """Handles application logging with edge case safety"""
+LOG_DIR = "logs"
+DEFAULT_LOG_FILE = "bot_automation.log"
+MAX_BYTES = 5 * 1024 * 1024  # 5 MB max per log file
+BACKUP_COUNT = 5             # Maintain up to 5 historical logs
 
-    def __init__(self, log_dir='logs', log_file='automation.log'):
-        self.log_dir = log_dir
-        self.log_path = os.path.join(log_dir, log_file)
-        self._ensure_log_directory()
-        
-        self.logger = logging.getLogger('automation_tool_39')
-        self.logger.setLevel(logging.INFO)
-        
-        handler = logging.FileHandler(self.log_path)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
 
-    def _ensure_log_directory(self):
-        """Creates log directory if access or existence fails"""
-        try:
-            if not os.path.exists(self.log_dir):
-                os.makedirs(self.log_dir, exist_ok=True)
-        except (OSError, PermissionError) as e:
-            print(f"Critical: Failed to create log directory: {e}")
+def setup_logger(name: str = "automation_tool", log_file: str = DEFAULT_LOG_FILE, level: int = logging.INFO) -> logging.Logger:
+    """
+    Configures and returns a logger with standard console and rotating file output.
+    Designed for continuous gaming automation sessions.
+    """
+    os.makedirs(LOG_DIR, exist_ok=True)
+    log_path = os.path.join(LOG_DIR, log_file)
 
-    def log_event(self, message: str, level: str = 'info'):
-        """Safe logging wrapper for game event tracking"""
-        try:
-            if level.lower() == 'error':
-                self.logger.error(message)
-            else:
-                self.logger.info(message)
-        except Exception as e:
-            # Fallback output if file system becomes unavailable
-            print(f"[{datetime.now()}] Logging failure: {e} | Msg: {message}")
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # Avoid attaching handlers multiple times if logger is already set up
+    if logger.handlers:
+        return logger
+
+    formatter = logging.Formatter(
+        "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    # Console output stream for runtime tracking
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # Size-based rotating file handler to restrict disk usage
+    file_handler = RotatingFileHandler(
+        log_path,
+        maxBytes=MAX_BYTES,
+        backupCount=BACKUP_COUNT,
+        encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    return logger
+
+
+# Pre-configured instance ready for module imports
+bot_logger = setup_logger()
