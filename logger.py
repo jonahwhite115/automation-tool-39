@@ -1,54 +1,38 @@
 import logging
-from logging.handlers import RotatingFileHandler
-import sys
-from pathlib import Path
+import os
+from datetime import datetime
 
-DEFAULT_LOG_FORMAT = "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"
-DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+class AutomationLogger:
+    """Handles application logging with edge case safety"""
 
+    def __init__(self, log_dir='logs', log_file='automation.log'):
+        self.log_dir = log_dir
+        self.log_path = os.path.join(log_dir, log_file)
+        self._ensure_log_directory()
+        
+        self.logger = logging.getLogger('automation_tool_39')
+        self.logger.setLevel(logging.INFO)
+        
+        handler = logging.FileHandler(self.log_path)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
-def setup_logger(
-    name: str = "game_bot",
-    log_file: str = "logs/automation.log",
-    log_level: int = logging.INFO,
-    max_bytes: int = 5 * 1024 * 1024,
-    backup_count: int = 5
-) -> logging.Logger:
-    """
-    Configures and returns a logger instance with stream and rotating file handlers.
-    Prevents log clutter during continuous gaming automation runs.
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(log_level)
+    def _ensure_log_directory(self):
+        """Creates log directory if access or existence fails"""
+        try:
+            if not os.path.exists(self.log_dir):
+                os.makedirs(self.log_dir, exist_ok=True)
+        except (OSError, PermissionError) as e:
+            print(f"Critical: Failed to create log directory: {e}")
 
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
-    formatter = logging.Formatter(DEFAULT_LOG_FORMAT, datefmt=DEFAULT_DATE_FORMAT)
-
-    # Create log directory if it does not exist
-    log_path = Path(log_file)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Rotating file handler for persistent logs
-    file_handler = RotatingFileHandler(
-        filename=log_path,
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(log_level)
-    logger.addHandler(file_handler)
-
-    # Console handler for real-time output during bot execution
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
-    console_handler.setLevel(log_level)
-    logger.addHandler(console_handler)
-
-    return logger
-
-
-# Default logger instance ready for imports across automation modules
-bot_logger = setup_logger()
+    def log_event(self, message: str, level: str = 'info'):
+        """Safe logging wrapper for game event tracking"""
+        try:
+            if level.lower() == 'error':
+                self.logger.error(message)
+            else:
+                self.logger.info(message)
+        except Exception as e:
+            # Fallback output if file system becomes unavailable
+            print(f"[{datetime.now()}] Logging failure: {e} | Msg: {message}")
