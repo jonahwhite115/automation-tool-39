@@ -3,36 +3,29 @@ import os
 from typing import Any, Dict
 
 DEFAULT_CONFIG = {
-    "resolution": "1920x1080",
-    "fps_cap": 60,
-    "auto_save": True,
-    "retry_limit": 3
+    "window_title": "Game Instance",
+    "auto_click_interval": 0.5,
+    "log_level": "INFO",
+    "headless": False
 }
 
-def load_configuration(filepath: str) -> Dict[str, Any]:
-    """
-    loads json config from disk or returns defaults
-    """
+def load_config(filepath: str = "config.json") -> Dict[str, Any]:
+    """Load configuration from JSON or return defaults."""
+    config = DEFAULT_CONFIG.copy()
+    
     if not os.path.exists(filepath):
-        return DEFAULT_CONFIG.copy()
-
+        return config
+        
     try:
-        with open(filepath, 'r') as f:
-            user_config = json.load(f)
-            # merge defaults with user input
-            config = DEFAULT_CONFIG.copy()
-            config.update(user_config)
-            return config
+        with open(filepath, "r") as f:
+            user_data = json.load(f)
+            config.update(user_data)
     except (json.JSONDecodeError, IOError):
-        return DEFAULT_CONFIG.copy()
+        pass
+        
+    return config
 
-def save_configuration(filepath: str, config: Dict[str, Any]) -> bool:
-    """
-    persists current config dictionary to json
-    """
-    try:
-        with open(filepath, 'w') as f:
-            json.dump(config, f, indent=4)
-        return True
-    except IOError:
-        return False
+def save_config(config: Dict[str, Any], filepath: str = "config.json") -> None:
+    """Persist current configuration to disk."""
+    with open(filepath, "w") as f:
+        json.dump(config, f, indent=4)
