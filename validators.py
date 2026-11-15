@@ -1,36 +1,35 @@
 import re
-from typing import Any, Dict, Optional
 
-def validate_player_stats(stats: Dict[str, Any]) -> bool:
-    """Validate game statistics structure for consistency."""
-    required_keys = {"player_id", "level", "xp", "inventory"}
-    if not isinstance(stats, dict) or not required_keys.issubset(stats.keys()):
-        return False
+class InputValidator:
+    """Utility class for validating user-provided game configuration inputs."""
+
+    @staticmethod
+    def validate_user_id(user_id: str) -> bool:
+        """Check if user_id follows standard alphanumeric pattern."""
+        return bool(re.match(r'^[a-zA-Z0-9_]{3,16}$', user_id))
+
+    @staticmethod
+    def validate_action_delay(delay: int) -> bool:
+        """Ensure action delay is within reasonable game-safe bounds."""
+        return 50 <= delay <= 5000
+
+    @staticmethod
+    def validate_macro_key(key: str) -> bool:
+        """Verify that the provided key is a single valid character."""
+        return len(key) == 1 and key.isalnum()
+
+def process_input(user_input: dict):
+    """Main loop entry for input validation processing."""
+    validator = InputValidator()
     
-    # Ensure numerical values are positive
-    if stats["level"] < 0 or stats["xp"] < 0:
-        return False
+    # Validate individual components of the game automation config
+    if not validator.validate_user_id(user_input.get('user', '')):
+        raise ValueError("Invalid user ID format")
         
-    return True
-
-def sanitize_username(username: str) -> Optional[str]:
-    """Clean username string to prevent injection or invalid chars."""
-    if not username or len(username) > 16:
-        return None
-    
-    # Allow alphanumeric and underscores only
-    pattern = re.compile(r'^[a-zA-Z0-9_]+$')
-    if not pattern.match(username):
-        return None
+    if not validator.validate_action_delay(user_input.get('delay', 0)):
+        raise ValueError("Delay must be between 50 and 5000ms")
         
-    return username
-
-def validate_game_config(config: Dict[str, Any]) -> bool:
-    """Check if configuration keys are present and typed correctly."""
-    expected = {"max_players": int, "region": str, "enable_cheats": bool}
-    
-    for key, expected_type in expected.items():
-        val = config.get(key)
-        if val is None or not isinstance(val, expected_type):
-            return False
+    if not validator.validate_macro_key(user_input.get('key', '')):
+        raise ValueError("Macro trigger must be a single alphanumeric key")
+        
     return True
