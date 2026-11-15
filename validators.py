@@ -1,35 +1,33 @@
-import re
+import logging
 
-class InputValidator:
-    """Utility class for validating user-provided game configuration inputs."""
+logger = logging.getLogger(__name__)
 
-    @staticmethod
-    def validate_user_id(user_id: str) -> bool:
-        """Check if user_id follows standard alphanumeric pattern."""
-        return bool(re.match(r'^[a-zA-Z0-9_]{3,16}$', user_id))
+class ValidationError(Exception):
+    """Custom exception for game automation input failures."""
+    pass
 
-    @staticmethod
-    def validate_action_delay(delay: int) -> bool:
-        """Ensure action delay is within reasonable game-safe bounds."""
-        return 50 <= delay <= 5000
+def validate_game_coords(x: int, y: int, screen_width: int, screen_height: int) -> bool:
+    """Ensures coordinates are within game window bounds."""
+    try:
+        if not (0 <= x < screen_width and 0 <= y < screen_height):
+            raise ValidationError(f"Coordinates ({x}, {y}) outside bounds {screen_width}x{screen_height}")
+        return True
+    except TypeError as e:
+        logger.error(f"Invalid coordinate type provided: {e}")
+        return False
+    except ValidationError as e:
+        logger.warning(f"Validation failed: {e}")
+        return False
 
-    @staticmethod
-    def validate_macro_key(key: str) -> bool:
-        """Verify that the provided key is a single valid character."""
-        return len(key) == 1 and key.isalnum()
-
-def process_input(user_input: dict):
-    """Main loop entry for input validation processing."""
-    validator = InputValidator()
+def sanitize_input(value: str, max_length: int = 50) -> str:
+    """Sanitizes user input strings to prevent injection or errors."""
+    if not isinstance(value, str):
+        return ""
     
-    # Validate individual components of the game automation config
-    if not validator.validate_user_id(user_input.get('user', '')):
-        raise ValueError("Invalid user ID format")
+    # Truncate and strip whitespace for safety
+    clean_value = value.strip()[:max_length]
+    
+    if not clean_value:
+        logger.debug("Sanitized input resulted in empty string")
         
-    if not validator.validate_action_delay(user_input.get('delay', 0)):
-        raise ValueError("Delay must be between 50 and 5000ms")
-        
-    if not validator.validate_macro_key(user_input.get('key', '')):
-        raise ValueError("Macro trigger must be a single alphanumeric key")
-        
-    return True
+    return clean_value
