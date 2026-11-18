@@ -1,33 +1,34 @@
-import logging
+import re
 
-logger = logging.getLogger(__name__)
 
-class ValidationError(Exception):
-    """Custom exception for game automation input failures."""
-    pass
+def validate_player_id(player_id: str) -> bool:
+    """Validate gaming platform player ID format."""
+    # Pattern: alphanumeric between 4 and 16 characters
+    pattern = re.compile(r'^[a-zA-Z0-9]{4,16}$')
+    return bool(pattern.match(player_id))
 
-def validate_game_coords(x: int, y: int, screen_width: int, screen_height: int) -> bool:
-    """Ensures coordinates are within game window bounds."""
-    try:
-        if not (0 <= x < screen_width and 0 <= y < screen_height):
-            raise ValidationError(f"Coordinates ({x}, {y}) outside bounds {screen_width}x{screen_height}")
-        return True
-    except TypeError as e:
-        logger.error(f"Invalid coordinate type provided: {e}")
-        return False
-    except ValidationError as e:
-        logger.warning(f"Validation failed: {e}")
-        return False
 
-def sanitize_input(value: str, max_length: int = 50) -> str:
-    """Sanitizes user input strings to prevent injection or errors."""
-    if not isinstance(value, str):
-        return ""
+def validate_game_score(score: int) -> bool:
+    """Ensure score is within logical game bounds."""
+    MIN_SCORE = 0
+    MAX_SCORE = 999999
+    return MIN_SCORE <= score <= MAX_SCORE
+
+
+def validate_match_data(data: dict) -> bool:
+    """Validate structure of incoming match packets."""
+    required_fields = {'match_id', 'player_id', 'score'}
     
-    # Truncate and strip whitespace for safety
-    clean_value = value.strip()[:max_length]
-    
-    if not clean_value:
-        logger.debug("Sanitized input resulted in empty string")
+    if not all(key in data for key in required_fields):
+        return False
         
-    return clean_value
+    if not isinstance(data['score'], int):
+        return False
+        
+    return validate_player_id(data['player_id']) and validate_game_score(data['score'])
+
+
+def sanitize_chat_message(message: str) -> str:
+    """Strip non-printable characters from game chat."""
+    # Remove control characters
+    return re.sub(r'[\x00-\x1f\x7f-\x9f]', '', message).strip()
