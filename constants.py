@@ -1,29 +1,32 @@
-from typing import Final, Dict
+from typing import Final
 
-# Configuration limits for automation-tool-39
-MAX_RETRIES: Final[int] = 3
-REQUEST_TIMEOUT: Final[float] = 30.0
+# Gaming automation profile configurations
+DEFAULT_FRAME_RATE: Final[int] = 60
+DEFAULT_RESOLUTION: Final[tuple[int, int]] = (1920, 1080)
 
-# Gaming platform status codes
-STATUS_SUCCESS: Final[int] = 200
-STATUS_RATE_LIMITED: Final[int] = 429
-STATUS_SERVER_ERROR: Final[int] = 500
+# Network timeout settings in seconds
+CONNECTION_TIMEOUT: Final[float] = 30.5
+RETRY_ATTEMPTS: Final[int] = 3
 
-# Data handling constants
-DEFAULT_ENCODING: Final[str] = 'utf-8'
-SUPPORTED_PLATFORMS: Final[list[str]] = ['steam', 'epic', 'xbox', 'playstation']
+# File paths for assets
+ASSET_DIRECTORY: Final[str] = "./assets"
+LOG_FILE_PATH: Final[str] = "./logs/automation.log"
 
-def get_platform_timeout(platform: str) -> float:
-    """Returns specific request timeout for gaming platform."""
-    timeouts: Dict[str, float] = {
-        'steam': 15.0,
-        'epic': 20.0,
-        'xbox': 25.0,
-        'playstation': 25.0
-    }
-    return timeouts.get(platform, REQUEST_TIMEOUT)
+# User-agent identification for scraping
+USER_AGENT: Final[str] = "AutomationTool-39/1.0.0"
 
-# Formatting defaults
-DATE_FORMAT: Final[str] = '%Y-%m-%d %H:%M:%S'
-LOG_FILE_PATH: Final[str] = 'logs/automation_tool.log'
-MAX_LOG_SIZE_MB: Final[int] = 5
+def get_app_version() -> str:
+    """
+    Return current automation tool version.
+
+    Returns:
+        str: The semantic versioning string.
+    """
+    return "1.0.0"
+
+class GameState:
+    """Container for shared game status constants."""
+    RUNNING: Final[str] = "RUNNING"
+    PAUSED: Final[str] = "PAUSED"
+    LOADING: Final[str] = "LOADING"
+    DISCONNECTED: Final[str] = "DISCONNECTED"
