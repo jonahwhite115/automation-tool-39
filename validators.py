@@ -1,34 +1,41 @@
 import re
 
+class InputValidator:
+    """Utility to ensure gaming automation inputs meet safety constraints."""
 
-def validate_player_id(player_id: str) -> bool:
-    """Validate gaming platform player ID format."""
-    # Pattern: alphanumeric between 4 and 16 characters
-    pattern = re.compile(r'^[a-zA-Z0-9]{4,16}$')
-    return bool(pattern.match(player_id))
-
-
-def validate_game_score(score: int) -> bool:
-    """Ensure score is within logical game bounds."""
-    MIN_SCORE = 0
-    MAX_SCORE = 999999
-    return MIN_SCORE <= score <= MAX_SCORE
-
-
-def validate_match_data(data: dict) -> bool:
-    """Validate structure of incoming match packets."""
-    required_fields = {'match_id', 'player_id', 'score'}
-    
-    if not all(key in data for key in required_fields):
+    @staticmethod
+    def validate_coordinates(x: int, y: int) -> bool:
+        """Verify screen coordinates are within standard 4K bounds."""
+        if 0 <= x <= 3840 and 0 <= y <= 2160:
+            return True
         return False
-        
-    if not isinstance(data['score'], int):
-        return False
-        
-    return validate_player_id(data['player_id']) and validate_game_score(data['score'])
 
+    @staticmethod
+    def validate_delay(delay: float) -> bool:
+        """Ensure input delay is within a safe range (0 to 10 seconds)."""
+        return 0 <= delay <= 10.0
 
-def sanitize_chat_message(message: str) -> str:
-    """Strip non-printable characters from game chat."""
-    # Remove control characters
-    return re.sub(r'[\x00-\x1f\x7f-\x9f]', '', message).strip()
+    @staticmethod
+    def validate_action_name(name: str) -> bool:
+        """Check that action identifiers only contain alphanumeric characters."""
+        if not name or len(name) > 32:
+            return False
+        return bool(re.match(r'^[a-zA-Z0-9_]+$', name))
+
+def get_validated_input(data: dict):
+    """Bulk validation for automation processing loop."""
+    x = data.get('x', -1)
+    y = data.get('y', -1)
+    delay = data.get('delay', -1)
+    action = data.get('action', '')
+
+    if not InputValidator.validate_coordinates(x, y):
+        raise ValueError(f"Invalid coordinates: {x}, {y}")
+
+    if not InputValidator.validate_delay(delay):
+        raise ValueError(f"Invalid delay: {delay}")
+
+    if not InputValidator.validate_action_name(action):
+        raise ValueError(f"Invalid action name: {action}")
+
+    return True
