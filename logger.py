@@ -1,39 +1,30 @@
 import logging
-import sys
-from typing import Optional
+import os
+from logging.handlers import RotatingFileHandler
 
-def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
-    """
-    Configures a standardized logger for automation-tool-39 components.
+def setup_logger(name: str = 'automation-tool-39', log_file: str = 'game_automation.log') -> logging.Logger:
+    """Configures a rotating file logger for gaming automation tasks."""
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
 
-    Args:
-        name: The name of the module or component.
-        level: The logging threshold level.
-
-    Returns:
-        A configured logging.Logger instance.
-    """
-    logger: logging.Logger = logging.getLogger(name)
-    logger.setLevel(level)
-
-    handler: logging.StreamHandler = logging.StreamHandler(sys.stdout)
-    formatter: logging.Formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-    )
-    
-    handler.setFormatter(formatter)
+    # Prevent duplicate handlers if logger is re-initialized
     if not logger.handlers:
-        logger.addHandler(handler)
-        
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+
+        # Rotate logs at 5MB, keep 3 backups
+        file_handler = RotatingFileHandler(
+            log_file, 
+            maxBytes=5*1024*1024, 
+            backupCount=3
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        # Stream handler for console visibility
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
     return logger
-
-def log_performance(logger: logging.Logger, action: str, duration: float) -> None:
-    """
-    Logs the execution duration for specific gaming tasks.
-
-    Args:
-        logger: The logger instance to use.
-        action: Name of the automated task performed.
-        duration: Time elapsed in seconds.
-    """
-    logger.info(f"action: {action} | duration: {duration:.4f}s")
