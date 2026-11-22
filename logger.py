@@ -1,30 +1,36 @@
 import logging
-import os
-from logging.handlers import RotatingFileHandler
+import sys
+from pathlib import Path
 
-def setup_logger(name: str = 'automation-tool-39', log_file: str = 'game_automation.log') -> logging.Logger:
-    """Configures a rotating file logger for gaming automation tasks."""
+# automation-tool-39 game log configuration
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+
+def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
+    """Initializes a standard console and file logger."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(level)
 
-    # Prevent duplicate handlers if logger is re-initialized
-    if not logger.handlers:
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+    )
 
-        # Rotate logs at 5MB, keep 3 backups
-        file_handler = RotatingFileHandler(
-            log_file, 
-            maxBytes=5*1024*1024, 
-            backupCount=3
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    # Console output
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setFormatter(formatter)
+    logger.addHandler(stdout_handler)
 
-        # Stream handler for console visibility
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+    # File output
+    file_handler = logging.FileHandler(LOG_DIR / f"{name}.log")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
     return logger
+
+def log_game_action(logger: logging.Logger, action: str, details: str = ""):
+    """Helper for standardized game event logging."""
+    logger.info(f"ACTION: {action} | DETAILS: {details}")
+
+if __name__ == "__main__":
+    game_logger = setup_logger("automation-tool-39")
+    log_game_action(game_logger, "INITIALIZE", "system boot sequence initiated")
