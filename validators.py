@@ -1,41 +1,33 @@
 import re
+from typing import Any, Optional
 
-class InputValidator:
-    """Utility to ensure gaming automation inputs meet safety constraints."""
+# regex patterns for gaming automation input validation
+COORD_PATTERN = re.compile(r'^\d{1,4},\d{1,4}$')
+ACTION_PATTERN = re.compile(r'^(click|move|wait|type)$')
 
-    @staticmethod
-    def validate_coordinates(x: int, y: int) -> bool:
-        """Verify screen coordinates are within standard 4K bounds."""
-        if 0 <= x <= 3840 and 0 <= y <= 2160:
-            return True
-        return False
+class InputValidationError(Exception):
+    """Custom exception for validation failures"""
+    pass
 
-    @staticmethod
-    def validate_delay(delay: float) -> bool:
-        """Ensure input delay is within a safe range (0 to 10 seconds)."""
-        return 0 <= delay <= 10.0
+def validate_action_payload(action: str, target: Any) -> bool:
+    """
+    Validates action type and target coordinates.
+    Ensures processing loop safety for automation commands.
+    """
+    if not ACTION_PATTERN.match(action):
+        raise InputValidationError(f"invalid action type: {action}")
 
-    @staticmethod
-    def validate_action_name(name: str) -> bool:
-        """Check that action identifiers only contain alphanumeric characters."""
-        if not name or len(name) > 32:
-            return False
-        return bool(re.match(r'^[a-zA-Z0-9_]+$', name))
+    if action in ['click', 'move']:
+        if not isinstance(target, str) or not COORD_PATTERN.match(target):
+            raise InputValidationError(f"invalid coordinates format: {target}")
 
-def get_validated_input(data: dict):
-    """Bulk validation for automation processing loop."""
-    x = data.get('x', -1)
-    y = data.get('y', -1)
-    delay = data.get('delay', -1)
-    action = data.get('action', '')
-
-    if not InputValidator.validate_coordinates(x, y):
-        raise ValueError(f"Invalid coordinates: {x}, {y}")
-
-    if not InputValidator.validate_delay(delay):
-        raise ValueError(f"Invalid delay: {delay}")
-
-    if not InputValidator.validate_action_name(action):
-        raise ValueError(f"Invalid action name: {action}")
+    if action == 'wait' and not isinstance(target, (int, float)):
+        raise InputValidationError(f"invalid wait duration: {target}")
 
     return True
+
+def sanitize_input(user_input: str) -> str:
+    """
+    Basic sanitization to strip whitespace and normalize string inputs.
+    """
+    return user_input.strip().lower()
