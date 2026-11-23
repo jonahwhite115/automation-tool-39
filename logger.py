@@ -1,41 +1,33 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import os
-from typing import Optional
 
-def setup_logger(name: str, log_file: str = 'automation.log') -> logging.Logger:
-    """Configures a robust logger for gaming automation tasks."""
+def setup_logger(name: str = 'automation-tool-39', log_file: str = 'app.log'):
+    """Configures a rotating file logger for system events."""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
-    try:
-        # Ensure directory exists for the log file
-        log_dir = os.path.dirname(log_file)
-        if log_dir and not os.path.exists(log_dir):
-            os.makedirs(log_dir, exist_ok=True)
-            
-        handler = logging.FileHandler(log_file, mode='a')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # Prevent duplicate handlers if re-initialized
+    if not logger.handlers:
+        # 5MB per file, keep 3 backups
+        handler = RotatingFileHandler(
+            log_file, 
+            maxBytes=5 * 1024 * 1024, 
+            backupCount=3
+        )
+        
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-    except (PermissionError, OSError) as e:
-        # Fallback to console if file system access fails
-        print(f"Critical: Could not initialize log file: {e}")
-        console_handler = logging.StreamHandler()
-        logger.addHandler(console_handler)
         
+        # Add console output for development visibility
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        logger.addHandler(console)
+
     return logger
 
-def safe_log(logger: logging.Logger, message: str, level: str = 'info') -> None:
-    """Thread-safe logging wrapper for game state monitoring."""
-    levels = {
-        'debug': logger.debug,
-        'info': logger.info,
-        'warning': logger.warning,
-        'error': logger.error
-    }
-    
-    try:
-        log_func = levels.get(level.lower(), logger.info)
-        log_func(str(message))
-    except Exception as e:
-        print(f"Logging failure: {e}")
+# Initialize global logger instance
+logger = setup_logger()
