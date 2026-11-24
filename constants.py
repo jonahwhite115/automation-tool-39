@@ -1,32 +1,38 @@
-from typing import Final
+import os
 
-# Gaming automation profile configurations
-DEFAULT_FRAME_RATE: Final[int] = 60
-DEFAULT_RESOLUTION: Final[tuple[int, int]] = (1920, 1080)
+# Gaming automation configuration settings
+VERSION = "1.2.0"
+APP_NAME = "automation-tool-39"
 
-# Network timeout settings in seconds
-CONNECTION_TIMEOUT: Final[float] = 30.5
-RETRY_ATTEMPTS: Final[int] = 3
+# Resource thresholds and constraints
+MAX_RETRIES = 5
+TIMEOUT_SECONDS = 30
+POLL_INTERVAL_MS = 500
 
-# File paths for assets
-ASSET_DIRECTORY: Final[str] = "./assets"
-LOG_FILE_PATH: Final[str] = "./logs/automation.log"
+# Game-specific memory offsets and key mappings
+BASE_MEMORY_OFFSET = 0x400000
+KEY_ATTACK = "f1"
+KEY_INTERACT = "e"
+KEY_INVENTORY = "i"
 
-# User-agent identification for scraping
-USER_AGENT: Final[str] = "AutomationTool-39/1.0.0"
+# Directory structure and file paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+SCREENSHOT_PATH = os.path.join(DATA_DIR, "screenshots")
 
-def get_app_version() -> str:
-    """
-    Return current automation tool version.
+# User agent and API headers for game services
+HEADERS = {
+    "User-Agent": f"{APP_NAME}/{VERSION}",
+    "Content-Type": "application/json"
+}
 
-    Returns:
-        str: The semantic versioning string.
-    """
-    return "1.0.0"
+# Recognized game process identifiers
+SUPPORTED_PROCESSES = {
+    "game_client": "game_x64.exe",
+    "launcher": "game_launcher.exe"
+}
 
-class GameState:
-    """Container for shared game status constants."""
-    RUNNING: Final[str] = "RUNNING"
-    PAUSED: Final[str] = "PAUSED"
-    LOADING: Final[str] = "LOADING"
-    DISCONNECTED: Final[str] = "DISCONNECTED"
+def get_abs_path(filename: str) -> str:
+    """Utility to resolve file paths within the tool."""
+    return os.path.join(DATA_DIR, filename)
