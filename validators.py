@@ -1,28 +1,34 @@
-class ValidationError(Exception):
-    """Custom exception for input validation failures in gaming automation."""
-    pass
+import re
 
-def validate_game_input(user_input: dict) -> bool:
-    """Ensures input data contains required fields and valid data types."""
-    required_keys = ['action_id', 'intensity', 'duration']
-    
-    # Check for missing keys
-    for key in required_keys:
-        if key not in user_input:
-            raise ValidationError(f"missing required input field: {key}")
+class InputValidator:
+    """Validates user inputs for gaming automation tasks."""
 
-    # Validate data types and ranges
-    if not isinstance(user_input['action_id'], int):
-        raise ValidationError("action_id must be an integer")
-        
-    if not (0 <= user_input['intensity'] <= 100):
-        raise ValidationError("intensity must be between 0 and 100")
-        
-    if not isinstance(user_input['duration'], (int, float)) or user_input['duration'] < 0:
-        raise ValidationError("duration must be a non-negative number")
+    @staticmethod
+    def validate_integer(value, min_val=0, max_val=9999):
+        """Ensures input is a valid integer within gaming-specific range."""
+        try:
+            num = int(value)
+            if min_val <= num <= max_val:
+                return num
+        except (ValueError, TypeError):
+            pass
+        return None
 
-    return True
+    @staticmethod
+    def validate_command(command):
+        """Sanitizes command strings to prevent shell injection."""
+        # Allow only alphanumeric, spaces, and standard gaming keys
+        if command and re.match(r'^[a-zA-Z0-9\s]{1,32}$', command):
+            return command.strip()
+        return None
 
-def sanitize_payload(payload: dict) -> dict:
-    """Strips whitespace from string inputs before processing."""
-    return {k: v.strip() if isinstance(v, str) else v for k, v in payload.items()}
+    @staticmethod
+    def validate_coordinates(x, y):
+        """Checks if coordinate pairs are within screen resolution bounds."""
+        try:
+            ix, iy = int(x), int(y)
+            if 0 <= ix <= 3840 and 0 <= iy <= 2160:
+                return (ix, iy)
+        except (ValueError, TypeError):
+            pass
+        return None
