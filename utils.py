@@ -1,40 +1,32 @@
-import functools
 import time
+import random
 import logging
-from typing import Callable, Any
 
-logger = logging.getLogger('automation-tool-39')
+# Configure logging for automation-tool-39
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def memoize_with_ttl(ttl_seconds: int = 300) -> Callable:
-    """Cache function results with time-to-live for game state data."""
-    def decorator(func: Callable) -> Callable:
-        cache = {}
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            key = (args, frozenset(kwargs.items()))
-            current_time = time.time()
-            if key in cache:
-                result, timestamp = cache[key]
-                if current_time - timestamp < ttl_seconds:
-                    return result
-            result = func(*args, **kwargs)
-            cache[key] = (result, current_time)
-            return result
-        return wrapper
-    return decorator
+def human_delay(min_sec: float = 1.0, max_sec: float = 3.0):
+    """Simulates human-like pauses to avoid detection."""
+    delay = random.uniform(min_sec, max_sec)
+    time.sleep(delay)
+    return delay
 
-def batch_process(data: list, batch_size: int = 100):
-    """Generator for efficient chunking of large game entities."""
-    for i in range(0, len(data), batch_size):
-        yield data[i:i + batch_size]
+def validate_coordinate(x: int, y: int, screen_width: int, screen_height: int) -> bool:
+    """Checks if coordinates fall within game window bounds."""
+    return 0 <= x < screen_width and 0 <= y < screen_height
 
-def profile_execution(func: Callable) -> Callable:
-    """Decorator to log execution time for performance tuning."""
-    @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        end = time.perf_counter()
-        logger.debug(f"Execution of {func.__name__} took {end - start:.4f}s")
-        return result
-    return wrapper
+def retry_operation(func, retries: int = 3, delay: float = 1.0):
+    """Wrapper for resilient function execution."""
+    for attempt in range(retries):
+        try:
+            return func()
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1} failed: {e}")
+            if attempt == retries - 1:
+                raise
+            time.sleep(delay)
+
+def format_timestamp():
+    """Returns current formatted string for logs."""
+    return time.strftime("%Y-%m-%d %H:%M:%S")
