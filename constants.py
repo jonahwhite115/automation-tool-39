@@ -1,38 +1,25 @@
-import os
+from typing import Final, Dict
 
-# Gaming automation configuration settings
-VERSION = "1.2.0"
-APP_NAME = "automation-tool-39"
+# Configuration constants for automation-tool-39 gaming engine
 
-# Resource thresholds and constraints
-MAX_RETRIES = 5
-TIMEOUT_SECONDS = 30
-POLL_INTERVAL_MS = 500
+POLLING_INTERVAL: Final[float] = 0.5
+MAX_RETRIES: Final[int] = 3
+TIMEOUT_SECONDS: Final[int] = 30
 
-# Game-specific memory offsets and key mappings
-BASE_MEMORY_OFFSET = 0x400000
-KEY_ATTACK = "f1"
-KEY_INTERACT = "e"
-KEY_INVENTORY = "i"
-
-# Directory structure and file paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-SCREENSHOT_PATH = os.path.join(DATA_DIR, "screenshots")
-
-# User agent and API headers for game services
-HEADERS = {
-    "User-Agent": f"{APP_NAME}/{VERSION}",
-    "Content-Type": "application/json"
+# Map of platform-specific keycodes
+INPUT_MAPPING: Final[Dict[str, int]] = {
+    "ACTION_JUMP": 0x20,
+    "ACTION_FIRE": 0x01,
+    "ACTION_RELOAD": 0x52
 }
 
-# Recognized game process identifiers
-SUPPORTED_PROCESSES = {
-    "game_client": "game_x64.exe",
-    "launcher": "game_launcher.exe"
-}
+SCREEN_RESOLUTION: Final[tuple[int, int]] = (1920, 1080)
+LOG_FILE_PATH: Final[str] = "logs/automation.log"
 
-def get_abs_path(filename: str) -> str:
-    """Utility to resolve file paths within the tool."""
-    return os.path.join(DATA_DIR, filename)
+def get_timeout_buffer() -> float:
+    """Returns the padded timeout duration for network operations."""
+    return float(TIMEOUT_SECONDS + 5.0)
+
+def get_retry_limit() -> int:
+    """Returns the maximum allowed retry count for engine tasks."""
+    return MAX_RETRIES
