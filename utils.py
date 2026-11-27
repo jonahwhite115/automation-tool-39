@@ -1,32 +1,36 @@
 import time
-import random
+import functools
 import logging
 
-# Configure logging for automation-tool-39
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Set up logger for automation-tool-39 network tasks
+logger = logging.getLogger('automation-tool-39')
 
-def human_delay(min_sec: float = 1.0, max_sec: float = 3.0):
-    """Simulates human-like pauses to avoid detection."""
-    delay = random.uniform(min_sec, max_sec)
-    time.sleep(delay)
-    return delay
+def retry_network_operation(max_attempts=3, delay=2):
+    """Decorator to retry network operations on failure."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            attempts = 0
+            while attempts < max_attempts:
+                try:
+                    return func(*args, **kwargs)
+                except (ConnectionError, TimeoutError) as e:
+                    attempts += 1
+                    logger.warning(f"Attempt {attempts} failed: {e}. Retrying...")
+                    if attempts == max_attempts:
+                        logger.error("Max network retries reached.")
+                        raise
+                    time.sleep(delay)
+            return None
+        return wrapper
+    return decorator
 
-def validate_coordinate(x: int, y: int, screen_width: int, screen_height: int) -> bool:
-    """Checks if coordinates fall within game window bounds."""
-    return 0 <= x < screen_width and 0 <= y < screen_height
-
-def retry_operation(func, retries: int = 3, delay: float = 1.0):
-    """Wrapper for resilient function execution."""
-    for attempt in range(retries):
-        try:
-            return func()
-        except Exception as e:
-            logger.warning(f"Attempt {attempt + 1} failed: {e}")
-            if attempt == retries - 1:
-                raise
-            time.sleep(delay)
-
-def format_timestamp():
-    """Returns current formatted string for logs."""
-    return time.strftime("%Y-%m-%d %H:%M:%S")
+# Example usage for gaming API calls
+@retry_network_operation(max_attempts=3, delay=1)
+def fetch_game_data(endpoint):
+    """Placeholder for actual network logic."""
+    # Simulating volatile network connectivity
+    import random
+    if random.random() < 0.7:
+        raise ConnectionError("Server connectivity issue")
+    return {"status": "success", "data": "game_stats"}
